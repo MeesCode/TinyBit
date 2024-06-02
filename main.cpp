@@ -7,51 +7,36 @@
 const int SCREEN_WIDTH = 512;
 const int SCREEN_HEIGHT = 512;
 
-int main(int argc, char* argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-        return 1;
-    }
+SDL_Renderer* renderer;
+SDL_Texture* background;
+SDL_Texture* spritesheet;
 
-    if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
-        SDL_Log("Unable to initialize SDL_image: %s", IMG_GetError());
-        SDL_Quit();
-        return 1;
-    }
+void draw_sprite_advanced(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH, int angle, SDL_RendererFlip flip) {
+    SDL_Rect source;
+    source.x = sourceX;
+    source.y = sourceY;
+    source.w = sourceW;
+    source.h = sourceH;
+
+    SDL_Rect target;
+    target.x = targetX;
+    target.y = targetY;
+    target.w = targetW;
+    target.h = targetH;
+
+    SDL_RenderCopyEx(renderer, spritesheet, &source, &target, angle, NULL, flip);
+}
+
+void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH) {
+    draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, 0, SDL_FLIP_NONE);
+}
+
+int main(int argc, char* argv[]) {
 
     SDL_Window* window = SDL_CreateWindow("SDL Random Colors with Image Overlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-    if (!window) {
-        SDL_Log("Unable to create window: %s", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (!renderer) {
-        SDL_Log("Unable to create renderer: %s", SDL_GetError());
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-    if (!texture) {
-        SDL_Log("Unable to create texture: %s", SDL_GetError());
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Surface* image = IMG_Load("Untitled.png");
-    if (!image) {
-        SDL_Log("Unable to load image: %s", IMG_GetError());
-        SDL_DestroyTexture(texture);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    background = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+    spritesheet = IMG_LoadTexture(renderer, "Untitled.png");
 
     srand((unsigned int)time(NULL));
     bool running = true;
@@ -64,63 +49,37 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        SDL_RenderClear(renderer);
+
         void* pixels;
         int pitch;
-        SDL_LockTexture(texture, NULL, &pixels, &pitch);
+        SDL_LockTexture(background, NULL, &pixels, &pitch);
 
         Uint32* pixelData = (Uint32*)pixels;
         for (int y = 0; y < SCREEN_HEIGHT; ++y) {
             for (int x = 0; x < SCREEN_WIDTH; ++x) {
-                Uint8 r = rand() % 256;
-                Uint8 g = rand() % 256;
-                Uint8 b = rand() % 256;
+                Uint8 r = x % 256;
+                Uint8 g = y % 256;
+                Uint8 b = 0;
                 pixelData[y * (pitch / 4) + x] = (r << 24) | (g << 16) | (b << 8) | 255;
             }
         }
 
-        Uint32* imageData = (Uint32*)image->pixels;
-        int imageWidth = image->w;
-        int imageHeight = image->h;
-
         int startX = 50;
         int startY = 100;
 
-        for (int y = startY; y < imageHeight + startY; ++y) {
-            for (int x = startX; x < imageWidth + startX; ++x) {
+        SDL_UnlockTexture(background);
 
 
-                Uint32 randomPixel = pixelData[y * (pitch / 4) + x];
-                Uint32 imagePixel = imageData[((y - startY) % imageHeight) * imageWidth + ((x - startX) % imageWidth)];
+        SDL_RenderCopy(renderer, background, NULL, NULL);
+        draw_sprite(0, 0, 100, 256, 0, 0, 100, 256);
+        draw_sprite_advanced(0, 0, 256, 256, 256, 0, 256, 256, 75, SDL_FLIP_NONE);
 
-                Uint8 r1 = (randomPixel >> 24) & 0xFF;
-                Uint8 g1 = (randomPixel >> 16) & 0xFF;
-                Uint8 b1 = (randomPixel >> 8) & 0xFF;
-                Uint8 a1 = (randomPixel) & 0xFF;
-
-                Uint8 a2 = (imagePixel >> 24) & 0xFF;
-                Uint8 r2 = (imagePixel >> 16) & 0xFF;
-                Uint8 g2 = (imagePixel >> 8) & 0xFF;
-                Uint8 b2 = (imagePixel) & 0xFF;
-
-                Uint8 r = (r2 * a2 + r1 * (255 - a2)) / 255;
-                Uint8 g = (g2 * a2 + g1 * (255 - a2)) / 255;
-                Uint8 b = (b2 * a2 + b1 * (255 - a2)) / 255;
-                Uint8 a = (a1 * (255 - a2) + a2) / 255;
-
-                pixelData[y * (pitch / 4) + x] = (r << 24) | (g << 16) | (b << 8) | a;
-            }
-        }
-
-        SDL_UnlockTexture(texture);
-
-        SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
-
     }
 
-    SDL_FreeSurface(image);
-    SDL_DestroyTexture(texture);
+    SDL_DestroyTexture(spritesheet);
+    SDL_DestroyTexture(background);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     IMG_Quit();
