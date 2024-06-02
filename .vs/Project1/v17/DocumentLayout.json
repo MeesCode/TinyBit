@@ -3,8 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\meesb\\source\\repos\\Project1\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6B9CA731-3FF4-4398-B630-E0DFADED6BDB}|Project1.vcxproj|C:\\Users\\meesb\\source\\repos\\Project1\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{6B9CA731-3FF4-4398-B630-E0DFADED6BDB}|Project1.vcxproj|solutionrelative:main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{6B9CA731-3FF4-4398-B630-E0DFADED6BDB}|Project1.vcxproj|C:\\Users\\meesb\\source\\repos\\Project1\\main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6B9CA731-3FF4-4398-B630-E0DFADED6BDB}|Project1.vcxproj|solutionrelative:main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6B9CA731-3FF4-4398-B630-E0DFADED6BDB}|Project1.vcxproj|C:\\Users\\meesb\\source\\repos\\Project1\\script.lua||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{6B9CA731-3FF4-4398-B630-E0DFADED6BDB}|Project1.vcxproj|solutionrelative:script.lua||{3B902123-F8A7-4915-9F01-361F908088D0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,18 +18,31 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "script.lua",
+              "DocumentMoniker": "C:\\Users\\meesb\\source\\repos\\Project1\\script.lua",
+              "RelativeDocumentMoniker": "script.lua",
+              "ToolTip": "C:\\Users\\meesb\\source\\repos\\Project1\\script.lua",
+              "RelativeToolTip": "script.lua",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAMAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-06-02T10:47:40.262Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "main.cpp",
-              "DocumentMoniker": "C:\\Users\\meesb\\source\\repos\\Project1\\main.cpp",
-              "RelativeDocumentMoniker": "main.cpp",
-              "ToolTip": "C:\\Users\\meesb\\source\\repos\\Project1\\main.cpp*",
-              "RelativeToolTip": "main.cpp*",
-              "ViewState": "AQIAAAkAAAAAAAAAAAAAAB4AAABzAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "Title": "main.c",
+              "DocumentMoniker": "C:\\Users\\meesb\\source\\repos\\Project1\\main.c",
+              "RelativeDocumentMoniker": "main.c",
+              "ToolTip": "C:\\Users\\meesb\\source\\repos\\Project1\\main.c",
+              "RelativeToolTip": "main.c",
+              "ViewState": "AQIAAF0AAAAAAAAAAAAAACUAAAABAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
               "WhenOpened": "2024-06-01T10:21:59.486Z",
               "EditorCaption": ""
             }
