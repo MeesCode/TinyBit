@@ -9,6 +9,10 @@
 #include "lua/lualib.h"
 #include "lua/lauxlib.h"
 
+#include "lua_functions.h"
+#include "main.h"
+#include "draw_functions.h"
+
 // Screen dimensions
 const int SCREEN_WIDTH = 512;
 const int SCREEN_HEIGHT = 512;
@@ -17,50 +21,6 @@ SDL_Renderer* renderer;
 SDL_Texture* background;
 SDL_Texture* spritesheet;
 
-int millis() {
-    return clock() / (CLOCKS_PER_SEC / 1000);
-}
-
-void draw_sprite_advanced(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH, int angle, SDL_RendererFlip flip) {
-    SDL_Rect source;
-    source.x = sourceX;
-    source.y = sourceY;
-    source.w = sourceW;
-    source.h = sourceH;
-
-    SDL_Rect target;
-    target.x = targetX;
-    target.y = targetY;
-    target.w = targetW;
-    target.h = targetH;
-
-    SDL_RenderCopyEx(renderer, spritesheet, &source, &target, angle, NULL, flip);
-}
-
-void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH) {
-    draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, 0, SDL_FLIP_NONE);
-}
-
-void lua_draw_sprite(lua_State* L) {
-    int sourceX = (int)luaL_checknumber(L, 1);
-    int sourceY = (int)luaL_checknumber(L, 2);
-    int sourceW = (int)luaL_checknumber(L, 3);
-    int sourceH = (int)luaL_checknumber(L, 4);
-
-    int targetX = (int)luaL_checknumber(L, 5);
-    int targetY = (int)luaL_checknumber(L, 6);
-    int targetW = (int)luaL_checknumber(L, 7);
-    int targetH = (int)luaL_checknumber(L, 8);
-
-    draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
-}
-
-int lua_millis(lua_State* L) {
-    lua_Integer m = millis();
-    lua_pushinteger(L, m);
-    return 1;
-}
-
 int main(int argc, char* argv[]) {
 
     SDL_Window* window = SDL_CreateWindow("SDL Random Colors with Image Overlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
@@ -68,11 +28,13 @@ int main(int argc, char* argv[]) {
     background = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
     spritesheet = IMG_LoadTexture(renderer, "Untitled.png");
 
-
+    // set up lua VM and functions
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
     lua_pushcfunction(L, lua_draw_sprite);
     lua_setglobal(L, "draw_sprite");
+    lua_pushcfunction(L, lua_draw_sprite_advanced);
+    lua_setglobal(L, "draw_sprite_advanced");
     lua_pushcfunction(L, lua_millis);
     lua_setglobal(L, "millis");
     luaL_dofile(L, "script.lua");
@@ -110,8 +72,6 @@ int main(int argc, char* argv[]) {
         SDL_UnlockTexture(background);
 
         SDL_RenderCopy(renderer, background, NULL, NULL);
-        draw_sprite(0, 0, 100, 256, 0, 0, 100, 256);
-        draw_sprite_advanced(0, 0, 256, 256, 256, 0, 256, 256, (int)millis()/10, SDL_FLIP_NONE);
 
         luaL_dofile(L, "script.lua");
 
