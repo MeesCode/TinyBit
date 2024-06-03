@@ -10,5 +10,6 @@ int lua_millis(lua_State* L);
 int lua_stroke(lua_State* L);
 int lua_fill(lua_State* L);
 int lua_rect(lua_State* L);
+int lua_pset(lua_State* L);
 
 #endif

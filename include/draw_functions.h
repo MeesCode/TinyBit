@@ -19,5 +19,6 @@ void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX
 void draw_rect(int x, int y, int w, int h);
 void set_stroke(int width, int r, int g, int b, int a);
 void set_fill(int r, int g, int b, int a);
+void draw_pixel(int x, int y);
 
 #endif

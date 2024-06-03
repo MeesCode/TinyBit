@@ -79,3 +79,14 @@ void lua_rect(lua_State* L) {
     draw_rect(x, y, w, h);
 }
 
+void lua_pset(lua_State* L) {
+    if (lua_gettop(L) != 2) {
+        return;
+    }
+
+    int x = (int)luaL_checknumber(L, 1);
+    int y = (int)luaL_checknumber(L, 2);
+
+    draw_pixel(x, y);
+}
+
