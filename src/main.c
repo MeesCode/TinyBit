@@ -30,16 +30,27 @@ int main(int argc, char* argv[]) {
     background = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
     spritesheet = IMG_LoadTexture(renderer, "assets/Untitled.png");
 
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
     // set up lua VM and functions
     L = luaL_newstate();
     luaL_openlibs(L);
 
-    lua_pushcfunction(L, lua_draw_sprite);
-    lua_setglobal(L, "draw_sprite");
-    lua_pushcfunction(L, lua_draw_sprite_advanced);
-    lua_setglobal(L, "draw_sprite_advanced");
+    lua_pushinteger(L, SCREEN_WIDTH); 
+    lua_setglobal(L, "SCREEN_WIDTH");
+    lua_pushinteger(L, SCREEN_HEIGHT);
+    lua_setglobal(L, "SCREEN_HEIGHT");
+    lua_pushcfunction(L, lua_sprite);
+    lua_setglobal(L, "sprite");
     lua_pushcfunction(L, lua_millis);
     lua_setglobal(L, "millis");
+    lua_pushcfunction(L, lua_stroke);
+    lua_setglobal(L, "stroke");
+    lua_pushcfunction(L, lua_fill);
+    lua_setglobal(L, "fill");
+    lua_pushcfunction(L, lua_rect);
+    lua_setglobal(L, "rect");
+
 
     // inital state
     luaL_dofile(L, "assets/script.lua");
