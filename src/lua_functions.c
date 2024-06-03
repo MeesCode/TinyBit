@@ -1,7 +1,7 @@
 
-#include "lua/lua.h"
-#include "lua/lualib.h"
-#include "lua/lauxlib.h"
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
 
 #include <SDL.h>
 #include <SDL_image.h>

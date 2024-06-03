@@ -5,9 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "lua/lua.h"
-#include "lua/lualib.h"
-#include "lua/lauxlib.h"
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
 
 #include "lua_functions.h"
 #include "main.h"
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     window = SDL_CreateWindow("SDL Random Colors with Image Overlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     background = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-    spritesheet = IMG_LoadTexture(renderer, "Untitled.png");
+    spritesheet = IMG_LoadTexture(renderer, "assets/Untitled.png");
 
     // set up lua VM and functions
     L = luaL_newstate();
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     lua_setglobal(L, "millis");
 
     // inital state
-    luaL_dofile(L, "script.lua");
+    luaL_dofile(L, "assets/script.lua");
 
     // check if the draw function is found
     lua_getglobal(L, "_draw");

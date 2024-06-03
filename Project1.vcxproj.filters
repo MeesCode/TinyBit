@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="lua\lapi.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -114,10 +111,13 @@
     <ClCompile Include="lua\lzio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="lua_functions.c">
+    <ClCompile Include="src\draw_functions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="draw_functions.c">
+    <ClCompile Include="src\lua_functions.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -206,24 +206,14 @@
     <ClInclude Include="lua\lzio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="lua_functions.h">
+    <ClInclude Include="include\draw_functions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="draw_functions.h">
+    <ClInclude Include="include\lua_functions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="main.h">
+    <ClInclude Include="include\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Untitled.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="script.lua">
-      <Filter>Resource Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

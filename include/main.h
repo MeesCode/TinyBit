@@ -2,7 +2,7 @@
 #define MAIN_H
 
 #include <SDL.h>
-#include "lua/lua.h"
+#include "lua.h"
 
 extern SDL_Renderer* renderer;
 extern SDL_Texture* background;
