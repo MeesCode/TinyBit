@@ -14,19 +14,21 @@
 #include "draw_functions.h"
 
 // Screen dimensions
-const int SCREEN_WIDTH = 512;
-const int SCREEN_HEIGHT = 512;
+const int SCREEN_WIDTH = 128;
+const int SCREEN_HEIGHT = 128;
 
 SDL_Renderer* renderer;
 SDL_Texture* spritesheet;
 SDL_Window* window;
 lua_State* L;
+SDL_Texture* render_target;
 
 int main(int argc, char* argv[]) {
 
-    window = SDL_CreateWindow("SDL Random Colors with Image Overlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    window = SDL_CreateWindow("SDL Random Colors with Image Overlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_RESIZABLE);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
     spritesheet = IMG_LoadTexture(renderer, "assets/Untitled.png");
+    render_target = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
@@ -80,6 +82,8 @@ int main(int argc, char* argv[]) {
         }
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+
+        SDL_SetRenderTarget(renderer, render_target);
         SDL_RenderClear(renderer);
 
         // execute lua draw function
@@ -91,6 +95,10 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
+        SDL_SetRenderTarget(renderer, NULL);
+
+        SDL_RenderClear(renderer);
+        SDL_RenderCopyEx(renderer, render_target, NULL, NULL, 0, NULL, SDL_FLIP_NONE);
         SDL_RenderPresent(renderer);
     }
 

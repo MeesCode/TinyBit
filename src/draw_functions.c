@@ -39,17 +39,17 @@ void draw_rect(int x, int y, int w, int h) {
 
     if (strokeWidth > 0) {
 
+        SDL_SetRenderDrawColor(renderer, strokeColor & 0xFF, (strokeColor >> 8) & 0xFF, (strokeColor >> 16) & 0xFF, (strokeColor >> 24) & 0xFF);
+
         // top
         rect.x = x;
         rect.y = y;
         rect.w = w;
         rect.h = strokeWidth;
-        SDL_SetRenderDrawColor(renderer, strokeColor & 0xFF, (strokeColor >> 8) & 0xFF, (strokeColor >> 16) & 0xFF, (strokeColor >> 24) & 0xFF);
         SDL_RenderFillRect(renderer, &rect);
 
         // bottom
         rect.y = y + h - strokeWidth;
-        SDL_SetRenderDrawColor(renderer, strokeColor & 0xFF, (strokeColor >> 8) & 0xFF, (strokeColor >> 16) & 0xFF, (strokeColor >> 24) & 0xFF);
         SDL_RenderFillRect(renderer, &rect);
 
         // left
@@ -57,12 +57,10 @@ void draw_rect(int x, int y, int w, int h) {
         rect.y = y + strokeWidth;
         rect.w = strokeWidth;
         rect.h = h - strokeWidth * 2;
-        SDL_SetRenderDrawColor(renderer, strokeColor & 0xFF, (strokeColor >> 8) & 0xFF, (strokeColor >> 16) & 0xFF, (strokeColor >> 24) & 0xFF);
         SDL_RenderFillRect(renderer, &rect);
 
         // right
         rect.x = x + w - strokeWidth;
-        SDL_SetRenderDrawColor(renderer, strokeColor & 0xFF, (strokeColor >> 8) & 0xFF, (strokeColor >> 16) & 0xFF, (strokeColor >> 24) & 0xFF);
         SDL_RenderFillRect(renderer, &rect);
 
         rect.x = x + strokeWidth;
@@ -82,9 +80,9 @@ void set_stroke(int width, int r, int g, int b, int a) {
 
 void set_fill(int r, int g, int b, int a) {
     fillColor = (r & 0xFF) | ((g & 0xFF) << 8) | ((b & 0xFF) << 16) | ((a & 0xFF) << 24);
-    SDL_SetRenderDrawColor(renderer, fillColor & 0xFF, (fillColor >> 8) & 0xFF, (fillColor >> 16) & 0xFF, (fillColor >> 24) & 0xFF);
 }
 
 void draw_pixel(int x, int y) {
+    SDL_SetRenderDrawColor(renderer, fillColor & 0xFF, (fillColor >> 8) & 0xFF, (fillColor >> 16) & 0xFF, (fillColor >> 24) & 0xFF);
     SDL_RenderDrawPoint(renderer, x, y);
 }
