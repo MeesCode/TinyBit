@@ -166,12 +166,14 @@
     <ClCompile Include="lua\lzio.c" />
     <ClCompile Include="src\audio_functions.c" />
     <ClCompile Include="src\draw_functions.c" />
+    <ClCompile Include="src\input_functions.c" />
     <ClCompile Include="src\lua_functions.c" />
     <ClCompile Include="src\main.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\audio_functions.h" />
     <ClInclude Include="include\draw_functions.h" />
+    <ClInclude Include="include\input_functions.h" />
     <ClInclude Include="include\lua_functions.h" />
     <ClInclude Include="include\main.h" />
     <ClInclude Include="lua\lapi.h" />

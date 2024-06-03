@@ -13,6 +13,7 @@
 #include "main.h"
 #include "draw_functions.h"
 #include "audio_functions.h"
+#include "input_functions.h"
 
 SDL_Renderer* renderer;
 SDL_Texture* spritesheet;
@@ -37,6 +38,7 @@ int main(int argc, char* argv[]) {
     lua_setup_draw();
     lua_setup_audio();
     lua_setup_functions();
+    lua_setup_input();
 
     // load lua file
     luaL_dofile(L, "assets/script.lua");
@@ -60,6 +62,7 @@ int main(int argc, char* argv[]) {
     srand((unsigned int)time(NULL));
     bool running = true;
     int music_timer = 0;
+    int frame_timer = 0;
     SDL_Event event;
 
     while (running) {
@@ -101,6 +104,7 @@ int main(int argc, char* argv[]) {
         // execute audio function
         // function is invoced every 8th beat
         if (music_function_set && (millis() - music_timer) > (60000 / bpm) / 8) {
+            music_timer = millis();
             lua_getglobal(L, "_music");
             if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
                 lua_pop(L, lua_gettop(L));
@@ -119,6 +123,9 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
         SDL_RenderCopyEx(renderer, render_target, NULL, NULL, 0, NULL, SDL_FLIP_NONE);
         SDL_RenderPresent(renderer);
+
+        while (millis() - frame_timer < (1000 / 60)) {}
+        frame_timer = millis();
     }
 
     destroyApplication();

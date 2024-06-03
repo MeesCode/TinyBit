@@ -10,6 +10,7 @@
 #include "lua_functions.h"
 #include "audio_functions.h"
 #include "draw_functions.h"
+#include "input_functions.h"
 
 void lua_setup_functions() {
     lua_pushcfunction(L, lua_sprite);
@@ -28,6 +29,8 @@ void lua_setup_functions() {
     lua_setglobal(L, "tone");
     lua_pushcfunction(L, lua_bpm);
     lua_setglobal(L, "bpm");
+    lua_pushcfunction(L, lua_btn);
+    lua_setglobal(L, "btn");
 }
 
 int lua_sprite(lua_State* L) {
@@ -134,5 +137,11 @@ int lua_bpm() {
     int new_bpm = luaL_checkinteger(L, 1);
     set_bpm(new_bpm);
     return 0;
+}
+
+int lua_btn() {
+    BUTTON btn = luaL_checkinteger(L, 1);
+    lua_pushboolean(L, input_btn(btn));
+    return 1;
 }
 
