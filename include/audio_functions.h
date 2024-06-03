@@ -1,5 +1,5 @@
-#ifndef MUSIC_FUNCTIONS_H
-#define MUSIC_FUNCTIONS_H
+#ifndef AUDIO_FUNCTIONS_H
+#define AUDIO_FUNCTIONS_H
 
 #include <SDL.h>
 
@@ -25,6 +25,8 @@ typedef enum {
 extern SDL_AudioDeviceID audio_device;
 extern SDL_AudioSpec audio_spec;
 extern int bpm;
+
+void lua_setup_audio();
 
 void set_bpm(int);
 void play_tone(TONE tone, int octave, int eights, WAVEFORM w);

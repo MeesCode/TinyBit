@@ -4,10 +4,18 @@
 #include <time.h>
 
 #include "main.h"
+#include "draw_functions.h"
 
 COLOR fillColor = 0;
 COLOR strokeColor = 0;
 int strokeWidth = 0;
+
+void lua_setup_draw() {
+    lua_pushinteger(L, SCREEN_WIDTH);
+    lua_setglobal(L, "SCREEN_WIDTH");
+    lua_pushinteger(L, SCREEN_HEIGHT);
+    lua_setglobal(L, "SCREEN_HEIGHT");
+}
 
 int millis() {
     return clock() / (CLOCKS_PER_SEC / 1000);

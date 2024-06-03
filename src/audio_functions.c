@@ -1,6 +1,8 @@
 
 #include <math.h>
 #include <stdint.h>
+
+#include "main.h"
 #include "audio_functions.h"
 
 SDL_AudioDeviceID audio_device;
@@ -35,6 +37,48 @@ void queue_freq_sin(float freq, int ms) {
         const int sample_size = sizeof(int16_t) * 1;
         SDL_QueueAudio(audio_device, &sample, sample_size);
     }
+}
+
+void lua_setup_audio() {
+    // set lua tone variables
+    lua_pushinteger(L, C);
+    lua_setglobal(L, "C");
+    lua_pushinteger(L, Cs);
+    lua_setglobal(L, "Cs");
+    lua_pushinteger(L, Db);
+    lua_setglobal(L, "Db");
+    lua_pushinteger(L, D);
+    lua_setglobal(L, "D");
+    lua_pushinteger(L, Ds);
+    lua_setglobal(L, "Ds");
+    lua_pushinteger(L, Eb);
+    lua_setglobal(L, "Eb");
+    lua_pushinteger(L, E);
+    lua_setglobal(L, "E");
+    lua_pushinteger(L, F);
+    lua_setglobal(L, "F");
+    lua_pushinteger(L, Fs);
+    lua_setglobal(L, "Fs");
+    lua_pushinteger(L, Gb);
+    lua_setglobal(L, "Gb");
+    lua_pushinteger(L, G);
+    lua_setglobal(L, "G");
+    lua_pushinteger(L, Gs);
+    lua_setglobal(L, "Gs");
+    lua_pushinteger(L, Ab);
+    lua_setglobal(L, "Ab");
+    lua_pushinteger(L, A);
+    lua_setglobal(L, "A");
+    lua_pushinteger(L, As);
+    lua_setglobal(L, "As");
+    lua_pushinteger(L, Bb);
+    lua_setglobal(L, "Bb");
+    lua_pushinteger(L, B);
+    lua_setglobal(L, "B");
+
+    // set lua waveforms
+    lua_pushinteger(L, SIN);
+    lua_setglobal(L, "SIN");
 }
 
 void play_tone(TONE tone, int octave, int eights, WAVEFORM w ) {

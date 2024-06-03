@@ -8,13 +8,15 @@
 #define FLIP_HORIZONTAL SDL_FLIP_HORIZONTAL
 #define FLIP_VERTICAL SDL_FLIP_VERTICAL
 
+// Screen dimensions
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 128
+
 typedef SDL_RendererFlip FLIP;
 typedef uint32_t COLOR;
 
 extern SDL_Renderer* renderer;
-extern SDL_Texture* background;
 extern SDL_Texture* spritesheet;
-extern SDL_Window* window;
 extern lua_State* L;
 
 void destroyApplication();

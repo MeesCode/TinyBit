@@ -14,11 +14,6 @@
 #include "draw_functions.h"
 #include "audio_functions.h"
 
-
-// Screen dimensions
-const int SCREEN_WIDTH = 128;
-const int SCREEN_HEIGHT = 128;
-
 SDL_Renderer* renderer;
 SDL_Texture* spritesheet;
 SDL_Window* window;
@@ -38,71 +33,10 @@ int main(int argc, char* argv[]) {
     L = luaL_newstate();
     luaL_openlibs(L);
 
-
-    // set lua screen variables 
-    lua_pushinteger(L, SCREEN_WIDTH); 
-    lua_setglobal(L, "SCREEN_WIDTH");
-    lua_pushinteger(L, SCREEN_HEIGHT);
-    lua_setglobal(L, "SCREEN_HEIGHT");
-
-    // set lua tone variables
-    lua_pushinteger(L, C);
-    lua_setglobal(L, "C");
-    lua_pushinteger(L, Cs);
-    lua_setglobal(L, "Cs");
-    lua_pushinteger(L, Db);
-    lua_setglobal(L, "Db");
-    lua_pushinteger(L, D);
-    lua_setglobal(L, "D");
-    lua_pushinteger(L, Ds);
-    lua_setglobal(L, "Ds");
-    lua_pushinteger(L, Eb);
-    lua_setglobal(L, "Eb");
-    lua_pushinteger(L, E);
-    lua_setglobal(L, "E");
-    lua_pushinteger(L, F);
-    lua_setglobal(L, "F");
-    lua_pushinteger(L, Fs);
-    lua_setglobal(L, "Fs");
-    lua_pushinteger(L, Gb);
-    lua_setglobal(L, "Gb");
-    lua_pushinteger(L, G);
-    lua_setglobal(L, "G");
-    lua_pushinteger(L, Gs);
-    lua_setglobal(L, "Gs");
-    lua_pushinteger(L, Ab);
-    lua_setglobal(L, "Ab");
-    lua_pushinteger(L, A);
-    lua_setglobal(L, "A");
-    lua_pushinteger(L, As);
-    lua_setglobal(L, "As");
-    lua_pushinteger(L, Bb);
-    lua_setglobal(L, "Bb");
-    lua_pushinteger(L, B);
-    lua_setglobal(L, "B");
-
-    // set lua waveforms
-    lua_pushinteger(L, SIN);
-    lua_setglobal(L, "SIN");
-
-
-    // set lua functions
-    lua_pushcfunction(L, lua_sprite);
-    lua_setglobal(L, "sprite");
-    lua_pushcfunction(L, lua_millis);
-    lua_setglobal(L, "millis");
-    lua_pushcfunction(L, lua_stroke);
-    lua_setglobal(L, "stroke");
-    lua_pushcfunction(L, lua_fill);
-    lua_setglobal(L, "fill");
-    lua_pushcfunction(L, lua_rect);
-    lua_setglobal(L, "rect");
-    lua_pushcfunction(L, lua_pset);
-    lua_setglobal(L, "pset");
-    lua_pushcfunction(L, lua_tone);
-    lua_setglobal(L, "tone");
-    lua_pushcfunction(L, lua_bpm);
-    lua_setglobal(L, "bpm");
+    // set up lua variables and functions
+    lua_setup_draw();
+    lua_setup_audio();
+    lua_setup_functions();
 
     // load lua file
     luaL_dofile(L, "assets/script.lua");

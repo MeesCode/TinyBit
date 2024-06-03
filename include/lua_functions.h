@@ -5,7 +5,9 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
-void lua_sprite(lua_State* L);
+void lua_setup_functions();
+
+int lua_sprite(lua_State* L);
 int lua_millis(lua_State* L);
 int lua_stroke(lua_State* L);
 int lua_fill(lua_State* L);

@@ -6,10 +6,31 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
-#include "draw_functions.h"
+#include "main.h"
+#include "lua_functions.h"
 #include "audio_functions.h"
+#include "draw_functions.h"
 
-void lua_sprite(lua_State* L) {
+void lua_setup_functions() {
+    lua_pushcfunction(L, lua_sprite);
+    lua_setglobal(L, "sprite");
+    lua_pushcfunction(L, lua_millis);
+    lua_setglobal(L, "millis");
+    lua_pushcfunction(L, lua_stroke);
+    lua_setglobal(L, "stroke");
+    lua_pushcfunction(L, lua_fill);
+    lua_setglobal(L, "fill");
+    lua_pushcfunction(L, lua_rect);
+    lua_setglobal(L, "rect");
+    lua_pushcfunction(L, lua_pset);
+    lua_setglobal(L, "pset");
+    lua_pushcfunction(L, lua_tone);
+    lua_setglobal(L, "tone");
+    lua_pushcfunction(L, lua_bpm);
+    lua_setglobal(L, "bpm");
+}
+
+int lua_sprite(lua_State* L) {
     int sourceX = (int)luaL_checknumber(L, 1);
     int sourceY = (int)luaL_checknumber(L, 2);
     int sourceW = (int)luaL_checknumber(L, 3);
@@ -22,7 +43,7 @@ void lua_sprite(lua_State* L) {
 
     if (lua_gettop(L) == 8) {
         draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
-        return;
+        return 0;
     }
 
     int angle = (int)luaL_checknumber(L, 9);
@@ -30,7 +51,7 @@ void lua_sprite(lua_State* L) {
 
     if (lua_gettop(L) == 10) {
         draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, angle, (FLIP)flip);
-        return;
+        return 0;
     }
 }
 
@@ -40,9 +61,9 @@ int lua_millis(lua_State* L) {
     return 1;
 }
 
-void lua_stroke(lua_State* L) {
+int lua_stroke(lua_State* L) {
     if (lua_gettop(L) != 5) {
-        return;
+        return 0;
     }
 
     int width = (int)luaL_checknumber(L, 1);
@@ -52,11 +73,12 @@ void lua_stroke(lua_State* L) {
     int a = (int)luaL_checknumber(L, 5);
 
     set_stroke(width, r, g, b, a);
+    return 0;
 }
 
-void lua_fill(lua_State* L) {
+int lua_fill(lua_State* L) {
     if (lua_gettop(L) != 4) {
-        return;
+        return 0;
     }
 
     int r = (int)luaL_checknumber(L, 1);
@@ -65,11 +87,12 @@ void lua_fill(lua_State* L) {
     int a = (int)luaL_checknumber(L, 4);
 
     set_fill(r, g, b, a);
+    return 0;
 }
 
-void lua_rect(lua_State* L) {
+int lua_rect(lua_State* L) {
     if (lua_gettop(L) != 4) {
-        return;
+        return 0;
     }
 
     int x = (int)luaL_checknumber(L, 1);
@@ -78,22 +101,24 @@ void lua_rect(lua_State* L) {
     int h = (int)luaL_checknumber(L, 4);
 
     draw_rect(x, y, w, h);
+    return 0;
 }
 
-void lua_pset(lua_State* L) {
+int lua_pset(lua_State* L) {
     if (lua_gettop(L) != 2) {
-        return;
+        return 0;
     }
 
     int x = (int)luaL_checknumber(L, 1);
     int y = (int)luaL_checknumber(L, 2);
 
     draw_pixel(x, y);
+    return 0;
 }
 
-void lua_tone() {
+int lua_tone() {
     if (lua_gettop(L) != 4) {
-        return;
+        return 0;
     }
 
     TONE tone = luaL_checkinteger(L, 1);
@@ -102,10 +127,12 @@ void lua_tone() {
     WAVEFORM wf = luaL_checkinteger(L, 4);
 
     play_tone(tone, octave, eights, wf);
+    return 0;
 }
 
-void lua_bpm() {
+int lua_bpm() {
     int new_bpm = luaL_checkinteger(L, 1);
     set_bpm(new_bpm);
+    return 0;
 }
 
