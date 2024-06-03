@@ -164,11 +164,13 @@
     <ClCompile Include="lua\lutf8lib.c" />
     <ClCompile Include="lua\lvm.c" />
     <ClCompile Include="lua\lzio.c" />
+    <ClCompile Include="src\audio_functions.c" />
     <ClCompile Include="src\draw_functions.c" />
     <ClCompile Include="src\lua_functions.c" />
     <ClCompile Include="src\main.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\audio_functions.h" />
     <ClInclude Include="include\draw_functions.h" />
     <ClInclude Include="include\lua_functions.h" />
     <ClInclude Include="include\main.h" />
@@ -200,6 +202,12 @@
     <ClInclude Include="lua\lundump.h" />
     <ClInclude Include="lua\lvm.h" />
     <ClInclude Include="lua\lzio.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\Untitled.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\script.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

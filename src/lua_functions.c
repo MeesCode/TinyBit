@@ -7,6 +7,7 @@
 #include <SDL_image.h>
 
 #include "draw_functions.h"
+#include "audio_functions.h"
 
 void lua_sprite(lua_State* L) {
     int sourceX = (int)luaL_checknumber(L, 1);
@@ -88,5 +89,23 @@ void lua_pset(lua_State* L) {
     int y = (int)luaL_checknumber(L, 2);
 
     draw_pixel(x, y);
+}
+
+void lua_tone() {
+    if (lua_gettop(L) != 4) {
+        return;
+    }
+
+    TONE tone = luaL_checkinteger(L, 1);
+    int octave = luaL_checkinteger(L, 2);
+    int eights = luaL_checkinteger(L, 3);
+    WAVEFORM wf = luaL_checkinteger(L, 4);
+
+    play_tone(tone, octave, eights, wf);
+}
+
+void lua_bpm() {
+    int new_bpm = luaL_checkinteger(L, 1);
+    set_bpm(new_bpm);
 }
 

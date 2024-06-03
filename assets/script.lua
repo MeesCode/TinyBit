@@ -1,6 +1,22 @@
 
-print(SCREEN_HEIGHT)
 stroke(2, 255, 0, 0, 255)
+
+counter = 0
+bpm_value = 50
+
+function _music()
+
+	-- play an few tones
+	-- tone(counter % (B + 1), 3, 1, SIN)
+
+	if counter % (B + 1) == 0 then
+		bpm_value = bpm_value + 10
+		bpm(bpm_value)
+	end
+
+	counter = counter + 1
+
+end
 
 function _draw()
 
