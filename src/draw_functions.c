@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <time.h>
+
 #include "main.h"
 
 int millis() {

@@ -6,6 +6,8 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
+#include "draw_functions.h"
+
 void lua_draw_sprite(lua_State* L) {
     int sourceX = (int)luaL_checknumber(L, 1);
     int sourceY = (int)luaL_checknumber(L, 2);
