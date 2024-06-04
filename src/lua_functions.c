@@ -39,6 +39,10 @@ void lua_setup_functions() {
 }
 
 int lua_sprite(lua_State* L) {
+    if (lua_gettop(L) != 8) {
+        return 0;
+    }
+
     int sourceX = (int)luaL_checknumber(L, 1);
     int sourceY = (int)luaL_checknumber(L, 2);
     int sourceW = (int)luaL_checknumber(L, 3);
@@ -49,18 +53,7 @@ int lua_sprite(lua_State* L) {
     int targetW = (int)luaL_checknumber(L, 7);
     int targetH = (int)luaL_checknumber(L, 8);
 
-    if (lua_gettop(L) == 8) {
-        draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
-        return 0;
-    }
-
-    int angle = (int)luaL_checknumber(L, 9);
-    int flip = luaL_checkinteger(L, 10);
-
-    if (lua_gettop(L) == 10) {
-        draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, angle, (FLIP)flip);
-        return 0;
-    }
+    draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
 }
 
 int lua_millis(lua_State* L) {

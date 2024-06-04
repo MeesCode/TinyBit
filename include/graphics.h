@@ -15,7 +15,6 @@ void set_stroke_width(COLOR);
 void lua_setup_draw();
 
 int millis();
-void draw_sprite_advanced(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH, int angle, FLIP flip);
 void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH);
 void draw_rect(int x, int y, int w, int h);
 void set_stroke(int width, int r, int g, int b, int a);

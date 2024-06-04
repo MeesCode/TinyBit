@@ -70,6 +70,7 @@ int main(int argc, char* argv[]) {
     lua_setup_audio();
     lua_setup_functions();
     lua_setup_input();
+    lua_setup_memory();
 
     // load lua file
     luaL_dofile(L, "assets/script.lua");
@@ -95,7 +96,7 @@ int main(int argc, char* argv[]) {
 
         // execute draw function
         if (draw_function_set && (millis() - frame_timer > (1000 / 60))) {
-            //frame_timer = millis();
+            frame_timer = millis();
 
             // set and clear intermediate render target
             SDL_SetRenderTarget(renderer, render_target);

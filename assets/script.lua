@@ -4,11 +4,13 @@ stroke(2, 255, 0, 0, 255)
 counter = 0
 bpm_value = 50
 
+print(MEM_SPRITESHEET_START)
+
 x = 0
 y = 0
 
 -- backup sprites
-copy(0x20400, 0x0400, 128*128*4)
+copy(0x20400, MEM_SPRITESHEET_START, MEM_DISPLAY_SIZE)
 
 -- set background
 for y=0,SCREEN_HEIGHT-1 do
@@ -19,7 +21,7 @@ for y=0,SCREEN_HEIGHT-1 do
 end
 
 -- backup background
-copy(0x30400, 0x10400, 128*128*4)
+copy(0x30400, MEM_DISPLAY_START, MEM_DISPLAY_SIZE)
 
 function _music()
 
@@ -42,7 +44,7 @@ function _draw()
 	cls()
 
 	-- get background
-	copy(0x400, 0x30400, 128*128*4)
+	copy(MEM_SPRITESHEET_START, 0x30400, MEM_DISPLAY_SIZE)
 
 	-- draw some sprites
 	sprite(0, 0, 128, 128, (128-(millis()/10) )% 128, (128 - (millis()/10)) % 128, 128, 128)
@@ -51,7 +53,7 @@ function _draw()
 	sprite(0, 0, 128, 128, (128-(millis()/10) )% 128 - 128, (128 - (millis()/10)) % 128, 128, 128)
 
 	-- get sprites
-	copy(0x400, 0x20400, 128*128*4)
+	copy(MEM_SPRITESHEET_START, 0x20400, MEM_DISPLAY_SIZE)
 
 	-- draw some sprites
 	sprite(0, 0, 128, 128, x, y, 64, 64)
