@@ -58,23 +58,30 @@ void draw_sprite_advanced(int sourceX, int sourceY, int sourceW, int sourceH, in
 void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH) {
     // draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, 0, FLIP_NONE);
 
-    uint32_t* pixels;
-    int pitch;
-    SDL_LockTexture(render_target, NULL, &pixels, &pitch);
+    for (int y = 0; y < sourceH; ++y) {
+        for (int x = 0; x < sourceW; ++x) {
 
-    //for (int y = 0; y < sourceH; ++y) {
-    //    for (int x = 0; x < sourceW; ++x) {
-    //        // set rgb values, keep in mind possible stretching
-    //        Uint8 r = memory[MEM_SPRITESHEET_START + (sourceY + y) * SCREEN_WIDTH + sourceX + x];
-    //        Uint8 g = memory[MEM_SPRITESHEET_START + (sourceY + y) * SCREEN_WIDTH + sourceX + x + 1];
-    //        Uint8 b = memory[MEM_SPRITESHEET_START + (sourceY + y) * SCREEN_WIDTH + sourceX + x + 2];
-    //        Uint8 a = memory[MEM_SPRITESHEET_START + (sourceY + y) * SCREEN_WIDTH + sourceX + x + 3];
-    //
-    //        pixels[y * (pitch / 4) + x] = 0xffffff50;
-    //    }
-    //}
+            if(x + sourceX < 0 || x + sourceX >= SCREEN_WIDTH || y + sourceY < 0 || y + sourceY >= SCREEN_HEIGHT) {
+                continue;
+            }
 
-    SDL_UnlockTexture(render_target);
+            if(x + targetX < 0 || x + targetX >= SCREEN_WIDTH || y + targetY < 0 || y + targetY >= SCREEN_HEIGHT) {
+                continue;
+            }
+
+            // set rgb values, keep in mind possible stretching
+            Uint8 r = memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4];
+            Uint8 g = memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4 + 1];
+            Uint8 b = memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4 + 2];
+            Uint8 a = memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4 + 3];
+    
+            memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4] = r;
+            memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4 + 1] = g;
+            memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4 + 2] = b;
+            memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4 + 3] = a;
+        }
+    }
+
 }
 
 void draw_rect(int x, int y, int w, int h) {
