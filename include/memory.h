@@ -14,4 +14,7 @@
 
 extern uint8_t memory[MEM_SIZE];
 
+void memory_init();
+void mem_copy(int dst, int src, int size);
+
 #endif

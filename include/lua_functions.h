@@ -16,5 +16,7 @@ int lua_pset(lua_State* L);
 int lua_tone(lua_State* L);
 int lua_bpm(lua_State* L);
 int lua_btn(lua_State* L);
+int lua_mycopy(lua_State* L);
+int lua_cls(lua_State* L);
 
 #endif

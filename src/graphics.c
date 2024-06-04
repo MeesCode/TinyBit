@@ -9,6 +9,9 @@
 #include "graphics.h"
 #include "memory.h"
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 COLOR fillColor = 0;
 COLOR strokeColor = 0;
 int strokeWidth = 0;
@@ -20,19 +23,19 @@ void lua_setup_draw() {
     lua_setglobal(L, "SCREEN_HEIGHT");
 }
 
-void blend(unsigned char result[4], const unsigned char fg[4], const unsigned char bg[4]) {
+void blend(uint8_t result[4], uint8_t fg[4], uint8_t bg[4]) {
     float alpha_fg = fg[3] / 255.0f;
     float alpha_bg = bg[3] / 255.0f;
     float alpha_out = alpha_fg + alpha_bg * (1 - alpha_fg);
 
     if (alpha_out > 0) {
-        result[0] = (unsigned char)((fg[0] * alpha_fg + bg[0] * alpha_bg * (1 - alpha_fg)) / alpha_out);
-        result[1] = (unsigned char)((fg[1] * alpha_fg + bg[1] * alpha_bg * (1 - alpha_fg)) / alpha_out);
-        result[2] = (unsigned char)((fg[2] * alpha_fg + bg[2] * alpha_bg * (1 - alpha_fg)) / alpha_out);
+        result[0] = (uint8_t)((fg[0] * alpha_fg + bg[0] * alpha_bg * (1 - alpha_fg)) / alpha_out);
+        result[1] = (uint8_t)((fg[1] * alpha_fg + bg[1] * alpha_bg * (1 - alpha_fg)) / alpha_out);
+        result[2] = (uint8_t)((fg[2] * alpha_fg + bg[2] * alpha_bg * (1 - alpha_fg)) / alpha_out);
     } else {
         result[0] = result[1] = result[2] = 0;
     }
-    result[3] = (unsigned char)(alpha_out * 255);
+    result[3] = (uint8_t)(alpha_out * 255);
 }
 
 int millis() {
@@ -56,26 +59,29 @@ void draw_sprite_advanced(int sourceX, int sourceY, int sourceW, int sourceH, in
 }
 
 void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH) {
-    // draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, 0, FLIP_NONE);
 
-    for (int y = 0; y < sourceH; ++y) {
-        for (int x = 0; x < sourceW; ++x) {
+    float scaleX = (float)sourceW / (float)targetW;
+    float scaleY = (float)sourceH / (float)targetH;
 
-            if(x + sourceX < 0 || x + sourceX >= SCREEN_WIDTH || y + sourceY < 0 || y + sourceY >= SCREEN_HEIGHT) {
-                continue;
-            }
+    for (int y = 0; y < targetH; ++y) {
+        for (int x = 0; x < targetW; ++x) {
 
             if(x + targetX < 0 || x + targetX >= SCREEN_WIDTH || y + targetY < 0 || y + targetY >= SCREEN_HEIGHT) {
                 continue;
             }
 
-            // set rgb values, keep in mind possible stretching
-            uint32_t *fg = &memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4];
+            int sourcePixelX = sourceX + (int)(x * scaleX);
+            int sourcePixelY = sourceY + (int)(y * scaleY);
+
+            if(sourcePixelX < 0 || sourcePixelX >= SCREEN_WIDTH || sourcePixelY < 0 || sourcePixelY >= SCREEN_HEIGHT) {
+                continue;
+            }
+
+            uint32_t *fg = &memory[MEM_SPRITESHEET_START + (sourcePixelY * SCREEN_WIDTH + sourcePixelX) * 4];
             uint32_t *bg = &memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4];
             blend(bg, fg, bg);
         }
     }
-
 }
 
 void draw_rect(int x, int y, int w, int h) {
@@ -130,4 +136,8 @@ void set_fill(int r, int g, int b, int a) {
 void draw_pixel(int x, int y) {
     uint32_t* bg = &memory[MEM_DISPLAY_START + (x + (y * SCREEN_WIDTH)) * 4];
     blend(bg, &fillColor, bg);
+}
+
+void draw_cls() {
+    memset(&memory[MEM_DISPLAY_START], 0, MEM_DISPLAY_SIZE);
 }

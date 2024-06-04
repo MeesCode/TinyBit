@@ -102,8 +102,6 @@ int main(int argc, char* argv[]) {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
             SDL_RenderClear(renderer);
 
-            memset(&memory[MEM_DISPLAY_START], 0, MEM_DISPLAY_SIZE);
-
             lua_getglobal(L, "_draw");
             if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
                 lua_pop(L, lua_gettop(L));

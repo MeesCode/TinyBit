@@ -11,6 +11,7 @@
 #include "audio.h"
 #include "graphics.h"
 #include "input.h"
+#include "memory.h"
 
 void lua_setup_functions() {
     lua_pushcfunction(L, lua_sprite);
@@ -31,6 +32,10 @@ void lua_setup_functions() {
     lua_setglobal(L, "bpm");
     lua_pushcfunction(L, lua_btn);
     lua_setglobal(L, "btn");
+    lua_pushcfunction(L, lua_mycopy);
+    lua_setglobal(L, "copy");
+    lua_pushcfunction(L, lua_cls);
+    lua_setglobal(L, "cls");
 }
 
 int lua_sprite(lua_State* L) {
@@ -119,7 +124,7 @@ int lua_pset(lua_State* L) {
     return 0;
 }
 
-int lua_tone() {
+int lua_tone(lua_State* L) {
     if (lua_gettop(L) != 4) {
         return 0;
     }
@@ -133,15 +138,32 @@ int lua_tone() {
     return 0;
 }
 
-int lua_bpm() {
+int lua_bpm(lua_State* L) {
     int new_bpm = luaL_checkinteger(L, 1);
     set_bpm(new_bpm);
     return 0;
 }
 
-int lua_btn() {
+int lua_btn(lua_State* L) {
     BUTTON btn = luaL_checkinteger(L, 1);
     lua_pushboolean(L, input_btn(btn));
     return 1;
 }
 
+int lua_mycopy(lua_State* L) {
+    if (lua_gettop(L) != 3) {
+        return 0;
+    }
+
+    int dst = luaL_checkinteger(L, 1);
+    int src = luaL_checkinteger(L, 2);
+    int size = luaL_checkinteger(L, 3);
+
+    mem_copy(dst, src, size);
+    return 0;
+}
+
+int lua_cls(lua_State* L) {
+    draw_cls();
+    return 0;
+}

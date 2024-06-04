@@ -1,5 +1,5 @@
-#ifndef audio_H
-#define audio_H
+#ifndef AUDIO_H
+#define AUDIO_H
 
 #include <SDL.h>
 
