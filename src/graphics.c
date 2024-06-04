@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include "main.h"
-#include "draw_functions.h"
+#include "graphics.h"
 
 COLOR fillColor = 0;
 COLOR strokeColor = 0;

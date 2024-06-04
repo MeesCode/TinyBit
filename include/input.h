@@ -1,5 +1,5 @@
-#ifndef INPUT_FUNCTIONS_H
-#define INPUT_FUNCTIONS_H
+#ifndef input_H
+#define input_H
 
 #include <SDL.h>
 #include <stdbool.h>

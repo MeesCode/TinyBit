@@ -1,5 +1,5 @@
-#ifndef DRAW_FUNCTIONS_H
-#define DRAW_FUNCTIONS_H
+#ifndef graphics_H
+#define graphics_H
 
 #include <SDL.h>
 #include"main.h"

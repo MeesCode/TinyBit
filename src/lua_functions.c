@@ -8,9 +8,9 @@
 
 #include "main.h"
 #include "lua_functions.h"
-#include "audio_functions.h"
-#include "draw_functions.h"
-#include "input_functions.h"
+#include "audio.h"
+#include "graphics.h"
+#include "input.h"
 
 void lua_setup_functions() {
     lua_pushcfunction(L, lua_sprite);

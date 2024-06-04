@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include "main.h"
-#include "input_functions.h"
+#include "input.h"
 
 void lua_setup_input() {
 	lua_pushinteger(L, X);

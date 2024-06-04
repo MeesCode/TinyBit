@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\draw_functions.c">
+    <ClCompile Include="src\graphics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\lua_functions.c">
@@ -24,7 +24,7 @@
     <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\audio_functions.c">
+    <ClCompile Include="src\audio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lua\lapi.c">
@@ -123,7 +123,7 @@
     <ClCompile Include="lua\lzio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\input_functions.c">
+    <ClCompile Include="src\input.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -212,7 +212,7 @@
     <ClInclude Include="lua\lzio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\draw_functions.h">
+    <ClInclude Include="include\graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\lua_functions.h">
@@ -221,10 +221,10 @@
     <ClInclude Include="include\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\audio_functions.h">
+    <ClInclude Include="include\audio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\input_functions.h">
+    <ClInclude Include="include\input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

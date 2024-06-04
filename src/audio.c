@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "main.h"
-#include "audio_functions.h"
+#include "audio.h"
 
 SDL_AudioDeviceID audio_device;
 SDL_AudioSpec audio_spec;

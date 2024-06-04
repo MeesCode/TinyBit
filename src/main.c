@@ -11,9 +11,9 @@
 
 #include "lua_functions.h"
 #include "main.h"
-#include "draw_functions.h"
-#include "audio_functions.h"
-#include "input_functions.h"
+#include "graphics.h"
+#include "audio.h"
+#include "input.h"
 
 SDL_Renderer* renderer;
 SDL_Texture* spritesheet;
