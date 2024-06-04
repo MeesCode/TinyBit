@@ -24,21 +24,16 @@ end
 function _draw()
 
 	-- set background
-	for y=0,SCREEN_HEIGHT do
-		for x=0,SCREEN_WIDTH do
-			fill((x*2) % 256, (y*2) % 256, (255 - y*2) % 256, 255)
+	for y=0,SCREEN_HEIGHT-1 do
+		for x=0,SCREEN_WIDTH-1 do
+			fill((x*2 + millis()/10) % 256, (y*2 + millis()/10) % 256, (256 - y*2 - millis()/10) % 256, 100)
 			pset(x, y)
         end
 	end
 
 	-- draw some sprites
-	sprite(0, 0, 256, 256, millis()/100, 64, 64, 64)
-	sprite(0, 0, 100, 256, 0, 0, 40, 64)
-	sprite(0, 0, 256, 256, x, y, 64, 64, millis()/10, 0)
+	-- sprite(0, 0, 128, 128, 0, 0, 40, 64)
 
-	-- draw a rectangle
-	fill(0, 255, 0, 100)
-	rect(20, 20, 30, 40)
 
 	if btn(UP) then
 		y = y - 1

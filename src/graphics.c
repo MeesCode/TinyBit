@@ -2,9 +2,12 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <time.h>
+#include <string.h>
+#include <stdint.h>
 
 #include "main.h"
 #include "graphics.h"
+#include "memory.h"
 
 COLOR fillColor = 0;
 COLOR strokeColor = 0;
@@ -15,6 +18,21 @@ void lua_setup_draw() {
     lua_setglobal(L, "SCREEN_WIDTH");
     lua_pushinteger(L, SCREEN_HEIGHT);
     lua_setglobal(L, "SCREEN_HEIGHT");
+}
+
+void blend(unsigned char result[4], const unsigned char fg[4], const unsigned char bg[4]) {
+    float alpha_fg = fg[3] / 255.0f;
+    float alpha_bg = bg[3] / 255.0f;
+    float alpha_out = alpha_fg + alpha_bg * (1 - alpha_fg);
+
+    if (alpha_out > 0) {
+        result[0] = (unsigned char)((fg[0] * alpha_fg + bg[0] * alpha_bg * (1 - alpha_fg)) / alpha_out);
+        result[1] = (unsigned char)((fg[1] * alpha_fg + bg[1] * alpha_bg * (1 - alpha_fg)) / alpha_out);
+        result[2] = (unsigned char)((fg[2] * alpha_fg + bg[2] * alpha_bg * (1 - alpha_fg)) / alpha_out);
+    } else {
+        result[0] = result[1] = result[2] = 0;
+    }
+    result[3] = (unsigned char)(alpha_out * 255);
 }
 
 int millis() {
@@ -38,7 +56,25 @@ void draw_sprite_advanced(int sourceX, int sourceY, int sourceW, int sourceH, in
 }
 
 void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH) {
-    draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, 0, FLIP_NONE);
+    // draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, 0, FLIP_NONE);
+
+    uint32_t* pixels;
+    int pitch;
+    SDL_LockTexture(render_target, NULL, &pixels, &pitch);
+
+    //for (int y = 0; y < sourceH; ++y) {
+    //    for (int x = 0; x < sourceW; ++x) {
+    //        // set rgb values, keep in mind possible stretching
+    //        Uint8 r = memory[MEM_SPRITESHEET_START + (sourceY + y) * SCREEN_WIDTH + sourceX + x];
+    //        Uint8 g = memory[MEM_SPRITESHEET_START + (sourceY + y) * SCREEN_WIDTH + sourceX + x + 1];
+    //        Uint8 b = memory[MEM_SPRITESHEET_START + (sourceY + y) * SCREEN_WIDTH + sourceX + x + 2];
+    //        Uint8 a = memory[MEM_SPRITESHEET_START + (sourceY + y) * SCREEN_WIDTH + sourceX + x + 3];
+    //
+    //        pixels[y * (pitch / 4) + x] = 0xffffff50;
+    //    }
+    //}
+
+    SDL_UnlockTexture(render_target);
 }
 
 void draw_rect(int x, int y, int w, int h) {
@@ -91,6 +127,7 @@ void set_fill(int r, int g, int b, int a) {
 }
 
 void draw_pixel(int x, int y) {
-    SDL_SetRenderDrawColor(renderer, fillColor & 0xFF, (fillColor >> 8) & 0xFF, (fillColor >> 16) & 0xFF, (fillColor >> 24) & 0xFF);
-    SDL_RenderDrawPoint(renderer, x, y);
+    uint32_t* pixel = &memory[MEM_DISPLAY_START + (x + (y * SCREEN_WIDTH)) * 4];
+    uint32_t copy = *pixel;
+    blend(pixel, &fillColor, &copy);
 }
