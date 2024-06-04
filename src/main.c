@@ -14,6 +14,7 @@
 #include "graphics.h"
 #include "audio.h"
 #include "input.h"
+#include "memory.h"
 
 SDL_Renderer* renderer;
 SDL_Texture* spritesheet;
@@ -30,7 +31,11 @@ int main(int argc, char* argv[]) {
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-    // set up lua VM and functions
+    // system initialization
+    audio_init();
+    memory_init();
+
+    // set up lua VM
     L = luaL_newstate();
     luaL_openlibs(L);
 
@@ -43,21 +48,11 @@ int main(int argc, char* argv[]) {
     // load lua file
     luaL_dofile(L, "assets/script.lua");
 
+    // check if special functions are set
     lua_getglobal(L, "_draw");
     bool draw_function_set = lua_isfunction(L, -1);
     lua_getglobal(L, "_music");
     bool music_function_set = lua_isfunction(L, -1);
-
-    // set up audio
-    SDL_Init(SDL_INIT_AUDIO);
-    SDL_zero(audio_spec);
-    audio_spec.freq = 44100;
-    audio_spec.format = AUDIO_S16SYS;
-    audio_spec.channels = 1;
-    audio_spec.samples = 1024;
-    audio_spec.callback = NULL;
-    audio_device = SDL_OpenAudioDevice(NULL, 0, &audio_spec, NULL, 0);
-    SDL_PauseAudioDevice(audio_device, 0);
 
     srand((unsigned int)time(NULL));
     bool running = true;
@@ -72,33 +67,27 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // set and clear intermetiate render target
-        SDL_SetRenderTarget(renderer, render_target);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-        SDL_RenderClear(renderer);
-
         // execute draw function
-        if(draw_function_set){
+        if (draw_function_set && (millis() - frame_timer > (1000 / 60))) {
+            frame_timer = millis();
+
+            // set and clear intermetiate render target
+            SDL_SetRenderTarget(renderer, render_target);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            SDL_RenderClear(renderer);
+
             lua_getglobal(L, "_draw");
             if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
                 lua_pop(L, lua_gettop(L));
-            }
-            else {
+            } else {
                 destroyApplication();
                 return 1;
-            }
-        }
+            } 
 
-        // execute draw function
-        if (draw_function_set) {
-            lua_getglobal(L, "_draw");
-            if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
-                lua_pop(L, lua_gettop(L));
-            }
-            else {
-                destroyApplication();
-                return 1;
-            }
+            // redraw window
+            SDL_SetRenderTarget(renderer, NULL);
+            SDL_RenderCopyEx(renderer, render_target, NULL, NULL, 0, NULL, SDL_FLIP_NONE);
+            SDL_RenderPresent(renderer);
         }
 
         // execute audio function
@@ -108,24 +97,12 @@ int main(int argc, char* argv[]) {
             lua_getglobal(L, "_music");
             if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
                 lua_pop(L, lua_gettop(L));
-            }
-            else {
+            } else {
                 destroyApplication();
                 return 1;
             }
         }
         
-        // set window as render target
-        SDL_SetRenderTarget(renderer, NULL);
-
-        // redraw render target
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-        SDL_RenderClear(renderer);
-        SDL_RenderCopyEx(renderer, render_target, NULL, NULL, 0, NULL, SDL_FLIP_NONE);
-        SDL_RenderPresent(renderer);
-
-        while (millis() - frame_timer < (1000 / 60)) {}
-        frame_timer = millis();
     }
 
     destroyApplication();

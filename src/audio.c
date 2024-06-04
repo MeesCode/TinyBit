@@ -24,6 +24,19 @@ const float frequencies[12][8] = {
     { 30.87f, 61.74f, 123.47f, 246.94f, 493.88f, 987.77f, 1975.53f, 3951.07f }
 };
 
+void audio_init(){
+    // set up audio
+    SDL_Init(SDL_INIT_AUDIO);
+    SDL_zero(audio_spec);
+    audio_spec.freq = 44100;
+    audio_spec.format = AUDIO_S16SYS;
+    audio_spec.channels = 1;
+    audio_spec.samples = 1024;
+    audio_spec.callback = NULL;
+    audio_device = SDL_OpenAudioDevice(NULL, 0, &audio_spec, NULL, 0);
+    SDL_PauseAudioDevice(audio_device, 0);
+}
+
 void queue_freq_sin(float freq, int ms) {
     float x = 0;
     for (int i = 0; i < (audio_spec.freq/1000) * ms; i++) {

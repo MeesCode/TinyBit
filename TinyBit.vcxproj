@@ -169,6 +169,7 @@
     <ClCompile Include="src\input.c" />
     <ClCompile Include="src\lua_functions.c" />
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\memory.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\audio.h" />
@@ -176,6 +177,7 @@
     <ClInclude Include="include\input.h" />
     <ClInclude Include="include\lua_functions.h" />
     <ClInclude Include="include\main.h" />
+    <ClInclude Include="include\memory.h" />
     <ClInclude Include="lua\lapi.h" />
     <ClInclude Include="lua\lauxlib.h" />
     <ClInclude Include="lua\lcode.h" />

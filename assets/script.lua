@@ -24,12 +24,12 @@ end
 function _draw()
 
 	-- set background
-	-- for y=0,SCREEN_HEIGHT do
-	-- 	for x=0,SCREEN_WIDTH do
-	-- 		fill((x*2) % 256, (y*2) % 256, (255 - y*2) % 256, 255)
-	-- 		pset(x, y)
-    --     end
-	-- end
+	for y=0,SCREEN_HEIGHT do
+		for x=0,SCREEN_WIDTH do
+			fill((x*2) % 256, (y*2) % 256, (255 - y*2) % 256, 255)
+			pset(x, y)
+        end
+	end
 
 	-- draw some sprites
 	sprite(0, 0, 256, 256, millis()/100, 64, 64, 64)
@@ -52,7 +52,5 @@ function _draw()
 	if btn(RIGHT) then
 		x = x + 1
 	end
-
-	print(x, y)
 
 end
