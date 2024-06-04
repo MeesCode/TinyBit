@@ -70,15 +70,9 @@ void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX
             }
 
             // set rgb values, keep in mind possible stretching
-            Uint8 r = memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4];
-            Uint8 g = memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4 + 1];
-            Uint8 b = memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4 + 2];
-            Uint8 a = memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4 + 3];
-    
-            memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4] = r;
-            memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4 + 1] = g;
-            memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4 + 2] = b;
-            memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4 + 3] = a;
+            uint32_t *fg = &memory[MEM_SPRITESHEET_START + ((sourceY + y) * SCREEN_WIDTH + sourceX + x) * 4];
+            uint32_t *bg = &memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4];
+            blend(bg, fg, bg);
         }
     }
 
@@ -134,7 +128,6 @@ void set_fill(int r, int g, int b, int a) {
 }
 
 void draw_pixel(int x, int y) {
-    uint32_t* pixel = &memory[MEM_DISPLAY_START + (x + (y * SCREEN_WIDTH)) * 4];
-    uint32_t copy = *pixel;
-    blend(pixel, &fillColor, &copy);
+    uint32_t* bg = &memory[MEM_DISPLAY_START + (x + (y * SCREEN_WIDTH)) * 4];
+    blend(bg, &fillColor, bg);
 }
