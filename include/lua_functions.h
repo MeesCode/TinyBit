@@ -9,6 +9,7 @@ void lua_setup_functions();
 
 int lua_sprite(lua_State* L);
 int lua_millis(lua_State* L);
+int lua_random(lua_State* L);
 int lua_stroke(lua_State* L);
 int lua_fill(lua_State* L);
 int lua_rect(lua_State* L);

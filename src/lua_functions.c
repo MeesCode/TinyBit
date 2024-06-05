@@ -39,9 +39,11 @@ void lua_setup_functions() {
     lua_pushcfunction(L, lua_cls);
     lua_setglobal(L, "cls");
     lua_pushcfunction(L, lua_peek);
-    lua_setglobal(L, "lua_peek");
+    lua_setglobal(L, "peek");
     lua_pushcfunction(L, lua_poke);
-    lua_setglobal(L, "lua_poke");
+    lua_setglobal(L, "poke");
+    lua_pushcfunction(L, lua_random);
+    lua_setglobal(L, "random");
 }
 
 int lua_sprite(lua_State* L) {
@@ -66,6 +68,19 @@ int lua_sprite(lua_State* L) {
 int lua_millis(lua_State* L) {
     lua_Integer m = millis();
     lua_pushinteger(L, m);
+    return 1;
+}
+
+int lua_random(lua_State* L) {
+    if (lua_gettop(L) != 2) {
+        return 0;
+    }
+
+    int min = (int)luaL_checknumber(L, 1);
+    int max = (int)luaL_checknumber(L, 2);
+
+    lua_pushinteger(L, random(min, max));
+    
     return 1;
 }
 

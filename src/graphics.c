@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
+
 
 #include "main.h"
 #include "graphics.h"
@@ -38,6 +40,10 @@ void blend(uint8_t result[4], uint8_t fg[4], uint8_t bg[4]) {
 
 int millis() {
     return clock() / (CLOCKS_PER_SEC / 1000);
+}
+
+int random(int min, int max) {
+    return min + rand() / (RAND_MAX / (max - min + 1) + 1);
 }
 
 void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH) {
