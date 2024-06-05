@@ -17,7 +17,6 @@
 #include "memory.h"
 
 SDL_Renderer* renderer;
-SDL_Texture* spritesheet;
 SDL_Window* window;
 lua_State* L;
 SDL_Texture* render_target;
@@ -26,7 +25,6 @@ int main(int argc, char* argv[]) {
 
     window = SDL_CreateWindow("SDL Random Colors with Image Overlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
-    spritesheet = IMG_LoadTexture(renderer, "assets/Untitled.png");
     render_target = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 128, 128);
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -37,7 +35,7 @@ int main(int argc, char* argv[]) {
     memory_init();
 
     // load spritesheet
-    SDL_Surface* image = IMG_Load("assets/spritesheet.png");
+    SDL_Surface* image = IMG_Load("assets/flappy.png");
     if (!image) {
         printf("IMG_Load: %s\n", IMG_GetError());
         return 1;
@@ -73,7 +71,7 @@ int main(int argc, char* argv[]) {
     lua_setup_memory();
 
     // load lua file
-    luaL_dofile(L, "assets/script.lua");
+    luaL_dofile(L, "assets/flappy.lua");
 
     // check if special functions are set
     lua_getglobal(L, "_draw");
@@ -96,7 +94,7 @@ int main(int argc, char* argv[]) {
 
         // execute draw function, limit to 60fps
         if (draw_function_set && (millis() - frame_timer > (1000 / 60))) {
-            //frame_timer = millis();
+            frame_timer = millis();
 
             // set and clear intermediate render target
             SDL_SetRenderTarget(renderer, render_target);
@@ -159,7 +157,6 @@ int main(int argc, char* argv[]) {
 
 void destroyApplication() {
     lua_close(L);
-    SDL_DestroyTexture(spritesheet);
     SDL_DestroyTexture(render_target);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
