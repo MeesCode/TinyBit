@@ -12,11 +12,14 @@ int lua_millis(lua_State* L);
 int lua_stroke(lua_State* L);
 int lua_fill(lua_State* L);
 int lua_rect(lua_State* L);
+int lua_oval(lua_State* L);
 int lua_pset(lua_State* L);
 int lua_tone(lua_State* L);
 int lua_bpm(lua_State* L);
 int lua_btn(lua_State* L);
 int lua_mycopy(lua_State* L);
 int lua_cls(lua_State* L);
+int lua_peek(lua_State* L);
+int lua_poke(lua_State* L);
 
 #endif

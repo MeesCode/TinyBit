@@ -36,3 +36,18 @@ void mem_copy(int dst, int src, int size) {
     }
     memcpy(&memory[dst], &memory[src], size);
 }
+
+uint8_t mem_peek(int dst) {
+    if (dst < 0 || dst > MEM_SIZE) {
+        return 0;
+    }
+    uint8_t* val = &memory[dst];
+    return val;
+}
+
+void mem_poke(int dst, int val){
+    if (dst < 0 || dst > MEM_SIZE) {
+        return;
+    }
+    memory[dst] = val & 0xff;
+}

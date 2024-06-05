@@ -94,15 +94,16 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // execute draw function
+        // execute draw function, limit to 60fps
         if (draw_function_set && (millis() - frame_timer > (1000 / 60))) {
-            frame_timer = millis();
+            //frame_timer = millis();
 
             // set and clear intermediate render target
             SDL_SetRenderTarget(renderer, render_target);
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
             SDL_RenderClear(renderer);
 
+            // perform lua draw function every frame
             lua_getglobal(L, "_draw");
             if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
                 lua_pop(L, lua_gettop(L));
@@ -111,19 +112,19 @@ int main(int argc, char* argv[]) {
                 return 1;
             } 
 
-            void* pixels;
+            // map display section to render target
+            uint32_t* pixels;
             int pitch;
             SDL_LockTexture(render_target, NULL, &pixels, &pitch);
 
-            Uint32* pixelData = (Uint32*)pixels;
             for (int y = 0; y < 128; ++y) {
                 for (int x = 0; x < 128; ++x) {
-                    Uint8 r = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4];
-                    Uint8 g = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 1];
-                    Uint8 b = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 2];
-                    Uint8 a = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 3];
+                    uint8_t r = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4];
+                    uint8_t g = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 1];
+                    uint8_t b = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 2];
+                    uint8_t a = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 3];
 
-                    pixelData[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
+                    pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
                 }
             }
 

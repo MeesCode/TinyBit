@@ -24,6 +24,8 @@ void lua_setup_functions() {
     lua_setglobal(L, "fill");
     lua_pushcfunction(L, lua_rect);
     lua_setglobal(L, "rect");
+    lua_pushcfunction(L, lua_oval);
+    lua_setglobal(L, "oval");
     lua_pushcfunction(L, lua_pset);
     lua_setglobal(L, "pset");
     lua_pushcfunction(L, lua_tone);
@@ -36,6 +38,10 @@ void lua_setup_functions() {
     lua_setglobal(L, "copy");
     lua_pushcfunction(L, lua_cls);
     lua_setglobal(L, "cls");
+    lua_pushcfunction(L, lua_peek);
+    lua_setglobal(L, "lua_peek");
+    lua_pushcfunction(L, lua_poke);
+    lua_setglobal(L, "lua_poke");
 }
 
 int lua_sprite(lua_State* L) {
@@ -54,6 +60,7 @@ int lua_sprite(lua_State* L) {
     int targetH = (int)luaL_checknumber(L, 8);
 
     draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
+    return 0;
 }
 
 int lua_millis(lua_State* L) {
@@ -105,6 +112,20 @@ int lua_rect(lua_State* L) {
     return 0;
 }
 
+int lua_oval(lua_State* L) {
+    if (lua_gettop(L) != 4) {
+        return 0;
+    }
+
+    int x = (int)luaL_checknumber(L, 1);
+    int y = (int)luaL_checknumber(L, 2);
+    int w = (int)luaL_checknumber(L, 3);
+    int h = (int)luaL_checknumber(L, 4);
+
+    draw_oval(x, y, w, h);
+    return 0;
+}
+
 int lua_pset(lua_State* L) {
     if (lua_gettop(L) != 2) {
         return 0;
@@ -143,6 +164,11 @@ int lua_btn(lua_State* L) {
     return 1;
 }
 
+int lua_cls(lua_State* L) {
+    draw_cls();
+    return 0;
+}
+
 int lua_mycopy(lua_State* L) {
     if (lua_gettop(L) != 3) {
         return 0;
@@ -156,7 +182,25 @@ int lua_mycopy(lua_State* L) {
     return 0;
 }
 
-int lua_cls(lua_State* L) {
-    draw_cls();
+int lua_peek(lua_State* L) {
+    if (lua_gettop(L) != 1) {
+        return 0;
+    }
+
+    int dst = luaL_checkinteger(L, 1);
+
+    lua_pushinteger(L, mem_peek(dst));
+    return 1;
+}
+
+int lua_poke(lua_State* L) {
+    if (lua_gettop(L) != 2) {
+        return 0;
+    }
+
+    int dst = luaL_checkinteger(L, 1);
+    int val = luaL_checkinteger(L, 2);
+
+    mem_poke(dst, val);
     return 0;
 }

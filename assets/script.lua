@@ -1,5 +1,4 @@
 
-stroke(2, 255, 0, 0, 255)
 
 counter = 0
 bpm_value = 50
@@ -10,7 +9,7 @@ x = 0
 y = 0
 
 -- backup sprites
-copy(0x20400, MEM_SPRITESHEET_START, MEM_DISPLAY_SIZE)
+copy(MEM_USER_START+MEM_DISPLAY_SIZE, MEM_SPRITESHEET_START, MEM_DISPLAY_SIZE)
 
 -- set background
 for y=0,SCREEN_HEIGHT-1 do
@@ -21,7 +20,7 @@ for y=0,SCREEN_HEIGHT-1 do
 end
 
 -- backup background
-copy(0x30400, MEM_DISPLAY_START, MEM_DISPLAY_SIZE)
+copy(MEM_USER_START+MEM_DISPLAY_SIZE*2, MEM_DISPLAY_START, MEM_DISPLAY_SIZE)
 
 function _music()
 
@@ -43,21 +42,32 @@ function _draw()
 
 	cls()
 
-	-- get background
-	copy(MEM_SPRITESHEET_START, 0x30400, MEM_DISPLAY_SIZE)
 
-	-- draw some sprites
-	sprite(0, 0, 128, 128, (128-(millis()/10) )% 128, (128 - (millis()/10)) % 128, 128, 128)
-	sprite(0, 0, 128, 128, (128-(millis()/10) )% 128 - 128, (128 - (millis()/10)) % 128 - 128, 128, 128)
-	sprite(0, 0, 128, 128, (128-(millis()/10) )% 128, (128 - (millis()/10)) % 128 - 128, 128, 128)
-	sprite(0, 0, 128, 128, (128-(millis()/10) )% 128 - 128, (128 - (millis()/10)) % 128, 128, 128)
+	-- get background
+	copy(MEM_SPRITESHEET_START, MEM_USER_START+MEM_DISPLAY_SIZE*2, MEM_DISPLAY_SIZE)
+
+	-- the moving background
+	sprite(0, 0, 128, 128, -(millis()/10) % 128, -(millis()/10) % 128, 128, 128)
+	sprite(0, 0, 128, 128, -(millis()/10) % 128, -(millis()/10) % 128 - 128, 128, 128)
+	sprite(0, 0, 128, 128, -(millis()/10) % 128 - 128, -(millis()/10) % 128, 128, 128)
+	sprite(0, 0, 128, 128, -(millis()/10) % 128 - 128, -(millis()/10) % 128 - 128, 128, 128)
 
 	-- get sprites
-	copy(MEM_SPRITESHEET_START, 0x20400, MEM_DISPLAY_SIZE)
+	copy(MEM_SPRITESHEET_START, MEM_USER_START+MEM_DISPLAY_SIZE, MEM_DISPLAY_SIZE)
 
 	-- draw some sprites
-	sprite(0, 0, 128, 128, x, y, 64, 64)
+	sprite(0, 0, 128, 128, 64, 64, 64, 64)
+	sprite(0, 0, 64, 32, x, y, 32, 64)
 
+
+	stroke(2, 255, 0, 0, 255)
+	fill(0, 255, 0, 255)
+
+	rect(0, 0, 20, 50)
+
+	stroke(3, 0, 0, 0, 255)
+	fill(255, 255, 0, 0)
+	oval(0, 64, 60, 50)
 
 	if btn(UP) then
 		y = y - 1

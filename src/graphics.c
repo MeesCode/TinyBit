@@ -4,6 +4,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "main.h"
 #include "graphics.h"
@@ -44,6 +45,7 @@ int millis() {
 
 void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH) {
 
+
     float scaleX = (float)sourceW / (float)targetW;
     float scaleY = (float)sourceH / (float)targetH;
 
@@ -70,42 +72,65 @@ void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX
 
 void draw_rect(int x, int y, int w, int h) {
 
-    SDL_Rect rect;
+    uint32_t fillBackup = fillColor;
+    fillColor = strokeColor;
 
-    if (strokeWidth > 0) {
-
-        SDL_SetRenderDrawColor(renderer, strokeColor & 0xFF, (strokeColor >> 8) & 0xFF, (strokeColor >> 16) & 0xFF, (strokeColor >> 24) & 0xFF);
-
-        // top
-        rect.x = x;
-        rect.y = y;
-        rect.w = w;
-        rect.h = strokeWidth;
-        SDL_RenderFillRect(renderer, &rect);
-
-        // bottom
-        rect.y = y + h - strokeWidth;
-        SDL_RenderFillRect(renderer, &rect);
-
-        // left
-        rect.x = x;
-        rect.y = y + strokeWidth;
-        rect.w = strokeWidth;
-        rect.h = h - strokeWidth * 2;
-        SDL_RenderFillRect(renderer, &rect);
-
-        // right
-        rect.x = x + w - strokeWidth;
-        SDL_RenderFillRect(renderer, &rect);
-
-        rect.x = x + strokeWidth;
-        rect.y = y + strokeWidth;
-        rect.w = w - strokeWidth * 2;
-        rect.h = h - strokeWidth * 2;
+    for (int i = 0; i < strokeWidth; i++) {
+        for (int j = 0; j < w; j++) {
+            draw_pixel(x + j, y + i);
+            draw_pixel(x + j, y + h - i - 1);
+        }
+        for (int j = 0; j < h; j++) {
+            draw_pixel(x + i, y + j);
+            draw_pixel(x + w - i - 1, y + j);
+        }
     }
 
-    SDL_SetRenderDrawColor(renderer, fillColor & 0xFF, (fillColor >> 8) & 0xFF, (fillColor >> 16) & 0xFF, (fillColor >> 24) & 0xFF);
-    SDL_RenderFillRect(renderer, &rect);
+    fillColor = fillBackup;
+
+    for (int i = strokeWidth; i < w - strokeWidth; i++) {
+        for (int j = strokeWidth; j < h - strokeWidth; j++) {
+            draw_pixel(x + i, y + j);
+        }
+    }
+}
+
+// draw an oval with outline, specified by x, y, w, h
+void draw_oval(int x, int y, int w, int h) {
+    // backup fill color
+    uint32_t fillBackup = fillColor;
+
+    // draw the fill
+    for (int i = 0; i < w; i++) {
+        for (int j = 0; j < h; j++) {
+
+            bool instroke = false;
+            bool infill = false;
+
+            // check if the point is inside the oval
+            if ((i - w / 2) * (i - w / 2) * h * h + (j - h / 2) * (j - h / 2) * w * w <= w * w * h * h / 4) {
+                infill = true;
+            }
+
+            // check if we are in the stroke area
+            if ((i - w / 2) * (i - w / 2) * h * h + (j - h / 2) * (j - h / 2) * w * w >= (w - strokeWidth) * (w - strokeWidth) * h * h / 4) {
+                instroke = true;
+            }
+
+            if(!infill) {
+                continue;
+            }
+
+            // if the point is inside the oval but outside the stroke, draw the fill
+            if (!instroke) {
+                fillColor = fillBackup;
+                draw_pixel(x + i, y + j);
+            } else {
+                fillColor = strokeColor;
+                draw_pixel(x + i, y + j);
+            }
+        }
+    }
 }
 
 void set_stroke(int width, int r, int g, int b, int a) {
