@@ -57,17 +57,15 @@ function _draw()
 
 	-- draw some sprites
 	sprite(0, 0, 128, 128, 64, 64, 64, 64)
-	sprite(0, 0, 64, 32, x, y, 32, 64)
-
 
 	stroke(2, 255, 0, 0, 255)
 	fill(0, 255, 0, 255)
 
 	rect(0, 0, 20, 50)
 
-	stroke(3, 0, 0, 0, 255)
-	fill(255, 255, 0, 0)
-	oval(0, 64, 60, 50)
+	stroke(1, 255, 0, 0, 200)
+	fill(255, 0, 255, 100)
+	oval(x, y, 60, 60)
 
 	if btn(UP) then
 		y = y - 1

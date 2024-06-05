@@ -10,9 +10,6 @@
 #include "graphics.h"
 #include "memory.h"
 
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
 COLOR fillColor = 0;
 COLOR strokeColor = 0;
 int strokeWidth = 0;
@@ -59,13 +56,10 @@ void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX
             int sourcePixelX = sourceX + (int)(x * scaleX);
             int sourcePixelY = sourceY + (int)(y * scaleY);
 
-            if(sourcePixelX < 0 || sourcePixelX >= SCREEN_WIDTH || sourcePixelY < 0 || sourcePixelY >= SCREEN_HEIGHT) {
-                continue;
-            }
-
-            uint32_t *fg = &memory[MEM_SPRITESHEET_START + (sourcePixelY * SCREEN_WIDTH + sourcePixelX) * 4];
-            uint32_t *bg = &memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4];
-            blend(bg, fg, bg);
+            uint32_t fillBackup = fillColor;
+            fillColor = *(uint32_t*)&memory[MEM_SPRITESHEET_START + (sourcePixelY * SCREEN_WIDTH + sourcePixelX) * 4];
+            draw_pixel(targetX + x, targetY + y);
+            fillColor = fillBackup;
         }
     }
 }
@@ -97,41 +91,40 @@ void draw_rect(int x, int y, int w, int h) {
 
 // draw an oval with outline, specified by x, y, w, h
 void draw_oval(int x, int y, int w, int h) {
-    // backup fill color
+    // Backup fill color
     uint32_t fillBackup = fillColor;
 
-    // draw the fill
+    float rx = w / 2.0f;
+    float ry = h / 2.0f;
+    float cx = x + rx;
+    float cy = y + ry;
+
+    float rx2 = rx * rx;
+    float ry2 = ry * ry;
+
+    float epsilon = 0.005f;  // Small value to fine-tune the boundary condition
+
     for (int i = 0; i < w; i++) {
         for (int j = 0; j < h; j++) {
+            float dx = i - rx;
+            float dy = j - ry;
+            float d = (dx * dx) / rx2 + (dy * dy) / ry2;
 
-            bool instroke = false;
-            bool infill = false;
-
-            // check if the point is inside the oval
-            if ((i - w / 2) * (i - w / 2) * h * h + (j - h / 2) * (j - h / 2) * w * w <= w * w * h * h / 4) {
-                infill = true;
-            }
-
-            // check if we are in the stroke area
-            if ((i - w / 2) * (i - w / 2) * h * h + (j - h / 2) * (j - h / 2) * w * w >= (w - strokeWidth) * (w - strokeWidth) * h * h / 4) {
-                instroke = true;
-            }
-
-            if(!infill) {
-                continue;
-            }
-
-            // if the point is inside the oval but outside the stroke, draw the fill
-            if (!instroke) {
-                fillColor = fillBackup;
-                draw_pixel(x + i, y + j);
-            } else {
-                fillColor = strokeColor;
+            // Check if the point is inside the oval
+            if (d <= 1.0f + epsilon) {
+                // Check if the point is within the stroke area
+                float strokeInnerRadius = (dx * dx) / ((rx - (float)strokeWidth - 0.1) * (rx - (float)strokeWidth - 0.1)) +
+                    (dy * dy) / ((ry - (float)strokeWidth - 0.1) * (ry - (float)strokeWidth - 0.1));
+                bool instroke = (strokeInnerRadius > 1.0f + epsilon);
+                fillColor = instroke ? strokeColor : fillBackup;
                 draw_pixel(x + i, y + j);
             }
         }
     }
+
+    fillColor = fillBackup;
 }
+
 
 void set_stroke(int width, int r, int g, int b, int a) {
     strokeWidth = width >= 0 ? width : 0;
@@ -143,6 +136,9 @@ void set_fill(int r, int g, int b, int a) {
 }
 
 void draw_pixel(int x, int y) {
+    if(x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT) {
+        return;
+    }
     uint32_t* bg = &memory[MEM_DISPLAY_START + (x + (y * SCREEN_WIDTH)) * 4];
     blend(bg, &fillColor, bg);
 }
