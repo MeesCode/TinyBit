@@ -126,6 +126,9 @@
     <ClCompile Include="src\input.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\memory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lua\lapi.h">
@@ -227,13 +230,23 @@
     <ClInclude Include="include\input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\Untitled.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="assets\spritesheet.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\flappy.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\script.lua" />
+    <None Include="assets\flappy.lua" />
   </ItemGroup>
 </Project>

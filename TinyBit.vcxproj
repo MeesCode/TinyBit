@@ -208,9 +208,12 @@
     <ClInclude Include="lua\lzio.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\flappy.png" />
+    <Image Include="assets\spritesheet.png" />
     <Image Include="assets\Untitled.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="assets\flappy.lua" />
     <None Include="assets\script.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

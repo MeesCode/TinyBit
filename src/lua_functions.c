@@ -11,6 +11,7 @@
 #include "audio.h"
 #include "graphics.h"
 #include "input.h"
+#include "memory.h"
 
 void lua_setup_functions() {
     lua_pushcfunction(L, lua_sprite);
@@ -23,6 +24,8 @@ void lua_setup_functions() {
     lua_setglobal(L, "fill");
     lua_pushcfunction(L, lua_rect);
     lua_setglobal(L, "rect");
+    lua_pushcfunction(L, lua_oval);
+    lua_setglobal(L, "oval");
     lua_pushcfunction(L, lua_pset);
     lua_setglobal(L, "pset");
     lua_pushcfunction(L, lua_tone);
@@ -31,9 +34,23 @@ void lua_setup_functions() {
     lua_setglobal(L, "bpm");
     lua_pushcfunction(L, lua_btn);
     lua_setglobal(L, "btn");
+    lua_pushcfunction(L, lua_mycopy);
+    lua_setglobal(L, "copy");
+    lua_pushcfunction(L, lua_cls);
+    lua_setglobal(L, "cls");
+    lua_pushcfunction(L, lua_peek);
+    lua_setglobal(L, "peek");
+    lua_pushcfunction(L, lua_poke);
+    lua_setglobal(L, "poke");
+    lua_pushcfunction(L, lua_random);
+    lua_setglobal(L, "random");
 }
 
 int lua_sprite(lua_State* L) {
+    if (lua_gettop(L) != 8) {
+        return 0;
+    }
+
     int sourceX = (int)luaL_checknumber(L, 1);
     int sourceY = (int)luaL_checknumber(L, 2);
     int sourceW = (int)luaL_checknumber(L, 3);
@@ -44,23 +61,26 @@ int lua_sprite(lua_State* L) {
     int targetW = (int)luaL_checknumber(L, 7);
     int targetH = (int)luaL_checknumber(L, 8);
 
-    if (lua_gettop(L) == 8) {
-        draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
-        return 0;
-    }
-
-    int angle = (int)luaL_checknumber(L, 9);
-    int flip = luaL_checkinteger(L, 10);
-
-    if (lua_gettop(L) == 10) {
-        draw_sprite_advanced(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, angle, (FLIP)flip);
-        return 0;
-    }
+    draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
+    return 0;
 }
 
 int lua_millis(lua_State* L) {
     lua_Integer m = millis();
     lua_pushinteger(L, m);
+    return 1;
+}
+
+int lua_random(lua_State* L) {
+    if (lua_gettop(L) != 2) {
+        return 0;
+    }
+
+    int min = (int)luaL_checknumber(L, 1);
+    int max = (int)luaL_checknumber(L, 2);
+
+    lua_pushinteger(L, random(min, max));
+    
     return 1;
 }
 
@@ -107,6 +127,20 @@ int lua_rect(lua_State* L) {
     return 0;
 }
 
+int lua_oval(lua_State* L) {
+    if (lua_gettop(L) != 4) {
+        return 0;
+    }
+
+    int x = (int)luaL_checknumber(L, 1);
+    int y = (int)luaL_checknumber(L, 2);
+    int w = (int)luaL_checknumber(L, 3);
+    int h = (int)luaL_checknumber(L, 4);
+
+    draw_oval(x, y, w, h);
+    return 0;
+}
+
 int lua_pset(lua_State* L) {
     if (lua_gettop(L) != 2) {
         return 0;
@@ -119,7 +153,7 @@ int lua_pset(lua_State* L) {
     return 0;
 }
 
-int lua_tone() {
+int lua_tone(lua_State* L) {
     if (lua_gettop(L) != 4) {
         return 0;
     }
@@ -133,15 +167,55 @@ int lua_tone() {
     return 0;
 }
 
-int lua_bpm() {
+int lua_bpm(lua_State* L) {
     int new_bpm = luaL_checkinteger(L, 1);
     set_bpm(new_bpm);
     return 0;
 }
 
-int lua_btn() {
+int lua_btn(lua_State* L) {
     BUTTON btn = luaL_checkinteger(L, 1);
     lua_pushboolean(L, input_btn(btn));
     return 1;
 }
 
+int lua_cls(lua_State* L) {
+    draw_cls();
+    return 0;
+}
+
+int lua_mycopy(lua_State* L) {
+    if (lua_gettop(L) != 3) {
+        return 0;
+    }
+
+    int dst = luaL_checkinteger(L, 1);
+    int src = luaL_checkinteger(L, 2);
+    int size = luaL_checkinteger(L, 3);
+
+    mem_copy(dst, src, size);
+    return 0;
+}
+
+int lua_peek(lua_State* L) {
+    if (lua_gettop(L) != 1) {
+        return 0;
+    }
+
+    int dst = luaL_checkinteger(L, 1);
+
+    lua_pushinteger(L, mem_peek(dst));
+    return 1;
+}
+
+int lua_poke(lua_State* L) {
+    if (lua_gettop(L) != 2) {
+        return 0;
+    }
+
+    int dst = luaL_checkinteger(L, 1);
+    int val = luaL_checkinteger(L, 2);
+
+    mem_poke(dst, val);
+    return 0;
+}
