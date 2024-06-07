@@ -117,11 +117,29 @@ function _draw()
 	end
 
 	-- draw points on screen
-	local points_x = 128
-	local temp_points = points
+	-- edge case when no points
 	if points == 0 then
-		sprite(71, 2, 6, 8, 120, 118, 6, 8)
+		sprite(71, 2, 6, 8, 61, 2, 6, 8)
 	else 
+		local temp_points = points
+
+		-- get total width
+		local total_points_w = 0
+		while temp_points > 0 do
+			local num = temp_points % 10
+			if num == 1 then
+				total_points_w = total_points_w + 5
+			else 
+				total_points_w = total_points_w + 8
+			end
+			temp_points = temp_points//10
+		end
+
+		-- set rightmost drawing position
+		local points_x = 64 + total_points_w//2
+
+		-- print points on screen
+		temp_points = points
 		while temp_points > 0 do
 			local num = temp_points % 10
 
@@ -140,7 +158,7 @@ function _draw()
 
 			points_x = points_x - num_w - 2
 			temp_points = temp_points//10
-			sprite(num_x, 2, num_w, 8, points_x, 118, num_w, 8)
+			sprite(num_x, 2, num_w, 8, points_x, 2, num_w, 8)
 		end
 	end
 
