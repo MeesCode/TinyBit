@@ -12,6 +12,20 @@ pipe_h_dist = 70
 pipe_x = 90
 pipes = {}
 
+-- number sprites
+num_spr = {
+	[0] = {x = 2, w = 5},
+	[1] = {x = 7, w = 8},
+	[2] = {x = 15, w = 8},
+	[3] = {x = 23, w = 8},
+	[4] = {x = 31, w = 8},
+	[5] = {x = 39, w = 8},
+	[6] = {x = 47, w = 8},
+	[7] = {x = 55, w = 8},
+	[8] = {x = 63, w = 8},
+	[9] = {x = 71, w = 8}
+}
+
 points = 0
 
 -- reset the game to the initial state
@@ -127,11 +141,7 @@ function _draw()
 		local total_points_w = 0
 		while temp_points > 0 do
 			local num = temp_points % 10
-			if num == 1 then
-				total_points_w = total_points_w + 5
-			else 
-				total_points_w = total_points_w + 8
-			end
+			total_points_w = total_points_w + num_spr[num].w
 			temp_points = temp_points//10
 		end
 
@@ -142,23 +152,9 @@ function _draw()
 		temp_points = points
 		while temp_points > 0 do
 			local num = temp_points % 10
-
-			if num == 1 then
-				num_x = 2
-				num_w = 3
-			end
-			if num >= 2 then
-				num_x = 7 + 8*(num-2)
-				num_w = 6
-			end
-			if num == 0 then
-				num_x = 71
-				num_w = 6
-			end
-
-			points_x = points_x - num_w - 2
+			points_x = points_x - num_spr[num].w
 			temp_points = temp_points//10
-			sprite(num_x, 2, num_w, 8, points_x, 2, num_w, 8)
+			sprite(num_spr[num].x, 2, num_spr[num].w, 8, points_x, 2, num_spr[num].w, 8)
 		end
 	end
 
