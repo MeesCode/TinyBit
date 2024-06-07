@@ -67,12 +67,12 @@ function _draw()
 	stroke(0,0,0,0,0)
 	fill(78, 192, 202, 255)
 	rect(0, 0, 128, 76)
-	sprite(0, 75, 87, 128-75, -((math.floor(millis()/90)) % 87), 75, 87, 128-75)
-	sprite(0, 75, 87, 128-75, -((math.floor(millis()/90)) % 87) + 87, 75, 87, 128-75)
-	sprite(0, 75, 87, 128-75, -((math.floor(millis()/90)) % 87) + 87*2, 75, 87, 128-75)
+	sprite(0, 75, 87, 128-75, -((millis()//90) % 87), 75, 87, 128-75)
+	sprite(0, 75, 87, 128-75, -((millis()//90) % 87) + 87, 75, 87, 128-75)
+	sprite(0, 75, 87, 128-75, -((millis()//90) % 87) + 87*2, 75, 87, 128-75)
 
 	-- draw bird
-	local sp = math.floor(millis() / 250) % 3
+	local sp = (millis() // 250) % 3
 	if sp == 0 then
 		sprite(101, 5, 17, 12, 20, y, 17, 12)
 	elseif sp == 1 then
@@ -84,24 +84,24 @@ function _draw()
 	-- draw pipes
 	for i = 1,3 do
 		-- top 
-		sprite(97, 52, 26, 15, math.floor(pipe_x) + (pipe_h_dist*(i-1)), pipes[i] - pipe_v_dist, 26, 13)
-		sprite(97, 51, 26, 1, math.floor(pipe_x) + (pipe_h_dist*(i-1)), pipes[i] - pipe_v_dist-60, 26, 60)
+		sprite(97, 52, 26, 15, pipe_x//1 + (pipe_h_dist*(i-1)), pipes[i] - pipe_v_dist, 26, 13)
+		sprite(97, 51, 26, 1, pipe_x//1 + (pipe_h_dist*(i-1)), pipes[i] - pipe_v_dist-60, 26, 60)
 		-- bottom
-		sprite(97, 69, 26, 15, math.floor(pipe_x) + (pipe_h_dist*(i-1)), pipes[i] + pipe_v_dist, 26, 13)
-		sprite(97, 82, 26, 1, math.floor(pipe_x) + (pipe_h_dist*(i-1)), pipes[i] + pipe_v_dist+12, 26, 60)
+		sprite(97, 69, 26, 15, pipe_x//1 + (pipe_h_dist*(i-1)), pipes[i] + pipe_v_dist, 26, 13)
+		sprite(97, 82, 26, 1, pipe_x//1 + (pipe_h_dist*(i-1)), pipes[i] + pipe_v_dist+12, 26, 60)
 	end
 
 	-- draw hitboxes
 	-- fill(0,0,0,0)
 	-- stroke(1,255,0,0,255)
 	-- rect(20, y, 17, 12)
-	-- rect(math.floor(pipe_x), pipes[1] - pipe_v_dist - 60, 26, 73)
-	-- rect(math.floor(pipe_x), pipes[1] + pipe_v_dist, 26, 73)
+	-- rect(pipe_x//1, pipes[1] - pipe_v_dist - 60, 26, 73)
+	-- rect(pipe_x//1, pipes[1] + pipe_v_dist, 26, 73)
 
 	-- check if bird and pipe overlap
 	-- reset the game when a pipe is hit
-	if overlap(20, y, 17, 12, math.floor(pipe_x), pipes[1] - pipe_v_dist - 60, 26, 73) or
-	   overlap(20, y, 17, 12, math.floor(pipe_x), pipes[1] + pipe_v_dist, 26, 73) or 
+	if overlap(20, y, 17, 12, pipe_x//1, pipes[1] - pipe_v_dist - 60, 26, 73) or
+	   overlap(20, y, 17, 12, pipe_x//1, pipes[1] + pipe_v_dist, 26, 73) or 
 	   y <= 0 or y >= 128 then
 		reset()
 	end
