@@ -61,7 +61,23 @@ int main(int argc, char* argv[]) {
 
     // set up lua VM
     L = luaL_newstate();
-    luaL_openlibs(L);
+    // luaL_openlibs(L);
+    
+    // load lua libraries
+    static const luaL_Reg loadedlibs[] = {
+        {LUA_GNAME, luaopen_base},
+        {LUA_COLIBNAME, luaopen_coroutine},
+        {LUA_TABLIBNAME, luaopen_table},
+        {LUA_STRLIBNAME, luaopen_string},
+        {LUA_MATHLIBNAME, luaopen_math},
+        {NULL, NULL}
+    };
+
+    const luaL_Reg *lib;
+    for (lib = loadedlibs; lib->func; lib++) {
+        luaL_requiref(L, lib->name, lib->func, 1);
+        lua_pop(L, 1);  /* remove lib */
+    }
 
     // set up lua variables and functions
     lua_setup_draw();
