@@ -7,7 +7,7 @@
 int cursorX = 0;
 int cursorY = 0;
 const int fontWidth = 4;
-const int fontHeight = 5;
+const int fontHeight = 6;
 uint32_t textColor = 0xffffffff;
 
 char characters[16*8] = {
@@ -31,13 +31,20 @@ void font_cursor(int x, int y) {
 }
 
 void font_prints(char* str) {
-	int currentX = cursorX;
 	char* ptr = str;
 	int location = 0;
 
+	int startX = cursorX;
 	uint32_t fillBackup = fillColor;
 	
 	while (*ptr) {
+
+		if (*ptr == '\n') {
+			cursorY += fontHeight;
+			cursorX = startX;
+			ptr++;
+			continue;
+		}
 
 		// get character location
 		for (int i = 0; i < 16 * 8; i++) {
@@ -47,18 +54,20 @@ void font_prints(char* str) {
 		// draw character 
 		for (int y = 0; y < fontHeight; y++) {
 			for (int x = 0; x < fontWidth; x++) {
-				if (memory[(128 * 4 * 8 * (location / 16)) + 8 * 4 * (location % 16) + MEM_FONT_START + (x + (y * 128)) * 4 + 3] != 0) {
+				uint8_t alpha = memory[(128 * 4 * 8 * (location / 16)) + 8 * 4 * (location % 16) + MEM_FONT_START + (x + (y * 128)) * 4 + 3];
+				if (alpha != 0) {
 					fillColor = textColor;
-					draw_pixel(currentX + x, cursorY + y);
+					fillColor = (fillColor & 0xffffff00) | alpha;
+					draw_pixel(cursorX + x, cursorY + y);
 				}
 				else {
 					fillColor = fillBackup;
-					draw_pixel(currentX + x, cursorY + y);
+					draw_pixel(cursorX + x, cursorY + y);
 				}
 			}
 		}
 
-		currentX += fontWidth;
+		cursorX += fontWidth;
 		ptr++;
 	}
 

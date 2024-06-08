@@ -87,16 +87,6 @@ function _draw()
 	sprite(0, 75, 87, 128-75, -((millis()//90) % 87) + 87, 75, 87, 128-75)
 	sprite(0, 75, 87, 128-75, -((millis()//90) % 87) + 87*2, 75, 87, 128-75)
 
-	-- draw bird
-	local sp = (millis() // 250) % 4
-	if sp == 0 then
-		sprite(101, 5, 17, 12, 20, y, 17, 12)
-	elseif sp == 1 or sp == 3 then
-		sprite(101, 18, 17, 12, 20, y, 17, 12)
-	elseif sp == 2 then
-		sprite(101, 31, 17, 12, 20, y, 17, 12)
-	end
-
 	-- draw pipes
 	for i = 1,3 do
 		-- top 
@@ -105,6 +95,21 @@ function _draw()
 		-- bottom
 		sprite(97, 69, 26, 15, pipe_x//1 + (pipe_h_dist*(i-1)), pipes[i] + pipe_v_dist, 26, 13)
 		sprite(97, 82, 26, 1, pipe_x//1 + (pipe_h_dist*(i-1)), pipes[i] + pipe_v_dist+12, 26, 60)
+	end
+
+	-- debug info
+	-- fill(0,0,0,255)
+	-- cursor(2, 114)
+	-- prints("Height: " .. math.floor(y) .. "\nPipe x: " .. math.floor(pipe_x))
+
+	-- draw bird
+	local sp = (millis() // 250) % 4
+	if sp == 0 then
+		sprite(101, 5, 17, 12, 20, y, 17, 12)
+	elseif sp == 1 or sp == 3 then
+		sprite(101, 18, 17, 12, 20, y, 17, 12)
+	elseif sp == 2 then
+		sprite(101, 31, 17, 12, 20, y, 17, 12)
 	end
 
 	-- draw hitboxes
@@ -159,12 +164,5 @@ function _draw()
 			sprite(num_spr[num].x, 2, num_spr[num].w, 8, points_x, 2, num_spr[num].w, 8)
 		end
 	end
-
-	-- debug info
-	-- fill(255,0,0,255)
-	-- cursor(2, 15)
-	-- prints("Height: " .. math.floor(y))
-	-- cursor(2, 21)
-	-- prints("Pipe x: " .. math.floor(pipe_x))
 
 end
