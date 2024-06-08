@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     }
 
     SDL_LockSurface(image);
-    for (int i = 0; i < 128 * 128; i++) {
+    for (int i = 0; i < image->w * image->h; i++) {
         uint32_t* pixels = (uint32_t*)image->pixels;
         SDL_GetRGBA(
             pixels[i],
@@ -56,8 +56,27 @@ int main(int argc, char* argv[]) {
     SDL_UnlockSurface(image);
     SDL_FreeSurface(image);
 
-    // copy to display buffer for now
-    memcpy(memory + MEM_DISPLAY_START, memory + MEM_SPRITESHEET_START, MEM_SPRITESHEET_SIZE);
+    // load font
+    image = IMG_Load("assets/font.png");
+    if (!image) {
+        printf("IMG_Load: %s\n", IMG_GetError());
+        return 1;
+    }
+
+    SDL_LockSurface(image);
+    for (int i = 0; i < image->w * image->h; i++) {
+        uint32_t* pixels = (uint32_t*)image->pixels;
+        SDL_GetRGBA(
+            pixels[i],
+            image->format,
+            &memory[MEM_FONT_START + i * 4],
+            &memory[MEM_FONT_START + i * 4 + 1],
+            &memory[MEM_FONT_START + i * 4 + 2],
+            &memory[MEM_FONT_START + i * 4 + 3]
+        );
+    }
+    SDL_UnlockSurface(image);
+    SDL_FreeSurface(image);
 
     // set up lua VM
     L = luaL_newstate();

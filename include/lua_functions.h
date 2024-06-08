@@ -22,5 +22,9 @@ int lua_mycopy(lua_State* L);
 int lua_cls(lua_State* L);
 int lua_peek(lua_State* L);
 int lua_poke(lua_State* L);
+int lua_cursor(lua_State* L);
+int lua_prints(lua_State* L);
+int lua_text(lua_State* L);
+
 
 #endif

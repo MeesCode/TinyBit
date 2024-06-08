@@ -12,6 +12,7 @@
 #include "graphics.h"
 #include "input.h"
 #include "memory.h"
+#include "font.h"
 
 void lua_setup_functions() {
     lua_pushcfunction(L, lua_sprite);
@@ -44,6 +45,12 @@ void lua_setup_functions() {
     lua_setglobal(L, "poke");
     lua_pushcfunction(L, lua_random);
     lua_setglobal(L, "random");
+    lua_pushcfunction(L, lua_cursor);
+    lua_setglobal(L, "cursor");
+    lua_pushcfunction(L, lua_prints);
+    lua_setglobal(L, "prints");
+    lua_pushcfunction(L, lua_text);
+    lua_setglobal(L, "text");
 }
 
 int lua_sprite(lua_State* L) {
@@ -110,6 +117,20 @@ int lua_fill(lua_State* L) {
     int a = (int)luaL_checknumber(L, 4);
 
     set_fill(r, g, b, a);
+    return 0;
+}
+
+int lua_text(lua_State* L) {
+    if (lua_gettop(L) != 4) {
+        return 0;
+    }
+
+    int r = (int)luaL_checknumber(L, 1);
+    int g = (int)luaL_checknumber(L, 2);
+    int b = (int)luaL_checknumber(L, 3);
+    int a = (int)luaL_checknumber(L, 4);
+
+    font_text_color(r, g, b, a);
     return 0;
 }
 
@@ -217,5 +238,29 @@ int lua_poke(lua_State* L) {
     int val = luaL_checkinteger(L, 2);
 
     mem_poke(dst, val);
+    return 0;
+}
+
+int lua_cursor(lua_State* L) {
+    if (lua_gettop(L) != 2) {
+        return 0;
+    }
+
+    int x = (int)luaL_checknumber(L, 1);
+    int y = (int)luaL_checknumber(L, 2);
+
+    font_cursor(x, y);
+    return 0;
+}
+
+int lua_prints(lua_State* L) {
+
+    if (lua_gettop(L) != 1) {
+        return 0;
+    }
+
+    char* str = luaL_checkstring(L, 1);
+
+    font_prints(str);
     return 0;
 }

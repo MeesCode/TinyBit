@@ -18,6 +18,10 @@ void lua_setup_memory() {
     lua_setglobal(L, "MEM_HEADER_START");
     lua_pushinteger(L, MEM_HEADER_SIZE);
     lua_setglobal(L, "MEM_HEADER_SIZE");
+    lua_pushinteger(L, MEM_FONT_START);
+    lua_setglobal(L, "MEM_FONT_START");
+    lua_pushinteger(L, MEM_FONT_SIZE);
+    lua_setglobal(L, "MEM_FONT_SIZE");
     lua_pushinteger(L, MEM_SPRITESHEET_START);
     lua_setglobal(L, "MEM_SPRITESHEET_START");
     lua_pushinteger(L, MEM_SPRITESHEET_SIZE);

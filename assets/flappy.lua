@@ -1,4 +1,6 @@
 
+text(255, 255, 255, 255)
+
 -- variables for physics
 y = 64
 dy = 0
@@ -157,5 +159,12 @@ function _draw()
 			sprite(num_spr[num].x, 2, num_spr[num].w, 8, points_x, 2, num_spr[num].w, 8)
 		end
 	end
+
+	-- debug info
+	-- fill(255,0,0,255)
+	-- cursor(2, 15)
+	-- prints("Height: " .. math.floor(y))
+	-- cursor(2, 21)
+	-- prints("Pipe x: " .. math.floor(pipe_x))
 
 end

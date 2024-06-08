@@ -25,16 +25,16 @@ copy(MEM_USER_START+MEM_DISPLAY_SIZE*2, MEM_DISPLAY_START, MEM_DISPLAY_SIZE)
 function _music()
 
 	-- play an few tones
-	-- for i=0,8 do
-	-- 	tone(counter % (B + 1), 3, 1, SIN)
-	-- 
-	-- 	if counter % (B + 1) == 0 then
-	-- 		bpm_value = bpm_value + 10
-	-- 		bpm(bpm_value)
-	-- 	end
-	-- 
-	-- 	counter = counter + 1
-	-- end
+	for i=0,8 do
+		tone(Bb, 2, 3, SAW)
+	
+		if counter % (B + 1) == 0 then
+			bpm_value = bpm_value + 10
+			bpm(bpm_value)
+		end
+	
+		counter = counter + 1
+	end
 
 end
 
