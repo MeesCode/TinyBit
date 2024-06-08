@@ -39,6 +39,7 @@ void font_prints(char* str) {
 	
 	while (*ptr) {
 
+		// process newline character
 		if (*ptr == '\n') {
 			cursorY += fontHeight;
 			cursorX = startX;

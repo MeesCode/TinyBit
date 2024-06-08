@@ -13,8 +13,10 @@
 #include "memory.h"
 
 COLOR fillColor = 0;
+COLOR fillColor2 = 0;
 COLOR strokeColor = 0;
 int strokeWidth = 0;
+uint16_t fillPattern = 0;
 
 void lua_setup_draw() {
     lua_pushinteger(L, SCREEN_WIDTH);
@@ -90,7 +92,7 @@ void draw_rect(int x, int y, int w, int h) {
 
     for (int i = strokeWidth; i < w - strokeWidth; i++) {
         for (int j = strokeWidth; j < h - strokeWidth; j++) {
-            draw_pixel(x + i, y + j);
+            draw_pixel_fill(x + i, y + j);
         }
     }
 }
@@ -122,8 +124,14 @@ void draw_oval(int x, int y, int w, int h) {
                 float strokeInnerRadius = (dx * dx) / ((rx - (float)strokeWidth - 0.1) * (rx - (float)strokeWidth - 0.1)) +
                     (dy * dy) / ((ry - (float)strokeWidth - 0.1) * (ry - (float)strokeWidth - 0.1));
                 bool instroke = (strokeInnerRadius > 1.0f + epsilon);
-                fillColor = instroke ? strokeColor : fillBackup;
-                draw_pixel(x + i, y + j);
+                if (instroke) {
+                    fillColor = instroke;
+                    draw_pixel(x + i, y + j);
+                }
+                else {
+                    fillColor = fillBackup;
+                    draw_pixel_fill(x + i, y + j);
+                }
             }
         }
     }
@@ -141,6 +149,14 @@ void set_fill(int r, int g, int b, int a) {
     fillColor = (r & 0xFF) | ((g & 0xFF) << 8) | ((b & 0xFF) << 16) | ((a & 0xFF) << 24);
 }
 
+void set_fillp(int fillp) {
+    fillPattern = fillp & 0xffff;
+}
+
+void set_fill2(int r, int g, int b, int a) {
+    fillColor2 = (r & 0xFF) | ((g & 0xFF) << 8) | ((b & 0xFF) << 16) | ((a & 0xFF) << 24);
+}
+
 void draw_pixel(int x, int y) {
     if(x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT) {
         return;
@@ -149,6 +165,19 @@ void draw_pixel(int x, int y) {
     blend(bg, &fillColor, bg);
 }
 
+void draw_pixel_fill(int x, int y) {
+    uint32_t fillBackup = fillColor;
+    if ((1 << ((x % 4) + (y % 4) * 4) & fillPattern)) {
+        fillColor = fillColor2;
+    }
+    draw_pixel(x, y);
+    fillColor = fillBackup;
+}
+
 void draw_cls() {
     memset(&memory[MEM_DISPLAY_START], 0, MEM_DISPLAY_SIZE);
+}
+
+void set_fill_pattern(uint16_t pattern) {
+    fillPattern = pattern;
 }

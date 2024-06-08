@@ -56,6 +56,8 @@ reset()
 
 function _draw()
 
+	prints("test")
+
 	-- control bird using the UP button
 	if btn(UP) then
 		dy = -1.6

@@ -51,6 +51,8 @@ void lua_setup_functions() {
     lua_setglobal(L, "prints");
     lua_pushcfunction(L, lua_text);
     lua_setglobal(L, "text");
+    lua_pushcfunction(L, lua_fillp);
+    lua_setglobal(L, "fillp");
 }
 
 int lua_sprite(lua_State* L) {
@@ -107,7 +109,7 @@ int lua_stroke(lua_State* L) {
 }
 
 int lua_fill(lua_State* L) {
-    if (lua_gettop(L) != 4) {
+    if (lua_gettop(L) != 4 && lua_gettop(L) != 8) {
         return 0;
     }
 
@@ -115,8 +117,20 @@ int lua_fill(lua_State* L) {
     int g = (int)luaL_checknumber(L, 2);
     int b = (int)luaL_checknumber(L, 3);
     int a = (int)luaL_checknumber(L, 4);
-
+    
     set_fill(r, g, b, a);
+
+    if (lua_gettop(L) == 4) {
+        return 0;
+    }
+
+    r = (int)luaL_checknumber(L, 5);
+    g = (int)luaL_checknumber(L, 6);
+    b = (int)luaL_checknumber(L, 7);
+    a = (int)luaL_checknumber(L, 8);
+
+    set_fill2(r, g, b, a);
+
     return 0;
 }
 
@@ -171,6 +185,19 @@ int lua_pset(lua_State* L) {
     int y = (int)luaL_checknumber(L, 2);
 
     draw_pixel(x, y);
+    return 0;
+}
+
+int lua_fillp(lua_State* L) {
+    printf("test");
+    if (lua_gettop(L) != 1) {
+        return 0;
+    }
+
+    int pattern = luaL_checkinteger(L, 1);
+    printf("%d\n", pattern);
+
+    set_fill_pattern(pattern);
     return 0;
 }
 
