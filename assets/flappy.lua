@@ -1,6 +1,8 @@
 
 text(255, 255, 255, 255)
 
+prints("joe")
+
 -- variables for physics
 y = 64
 dy = 0
@@ -55,8 +57,6 @@ end
 reset()
 
 function _draw()
-
-	prints("test")
 
 	-- control bird using the UP button
 	if btn(UP) then

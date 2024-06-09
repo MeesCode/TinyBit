@@ -1,8 +1,19 @@
-#include <SDL.h>
-#include <SDL_image.h>
+
+#ifdef _WIN32
+    #include "getopt.h"
+    #include <SDL.h>
+    #include <SDL_image.h>
+#else
+    #include <unistd.h>
+    #include <SDL/SDL.h>
+    #include <SDL/SDL_image.h>
+#endif
+
+
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdint.h>
 
 #include "lua.h"
@@ -21,9 +32,85 @@ SDL_Window* window;
 lua_State* L;
 SDL_Texture* render_target;
 
+void play_game(SDL_Surface*, char*);
+
+void print_usage() {
+    printf("Usage: program [-c file1 file2] [-e file1 file2] [-p file1 file2] [file]\n");
+}
+
 int main(int argc, char* argv[]) {
 
-    window = SDL_CreateWindow("SDL Random Colors with Image Overlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_RESIZABLE);
+    if (argc < 2) {
+        print_usage();
+        exit(EXIT_FAILURE);
+    }
+
+    char* command = argv[1];
+    if (strcmp(command, "-c") == 0 || strcmp(command, "-e") == 0 || strcmp(command, "-p") == 0) {
+        if (argc != 4) {
+            print_usage();
+            exit(EXIT_FAILURE);
+        }
+        char* file1 = argv[2];
+        char* file2 = argv[3];
+        printf("Command: %s, File1: %s, File2: %s\n", command, file1, file2);
+        // Add your logic to handle the commands with two files here
+    }
+    else {
+        // If the first argument is not -c, -e, or -p, treat it as a single file argument
+        if (argc != 2) {
+            print_usage();
+            exit(EXIT_FAILURE);
+        }
+        char* file = argv[1];
+        printf("Single file: %s\n", file);
+        // Add your logic to handle the single file here
+    }
+
+    // load spritesheet
+    SDL_Surface* image = IMG_Load(argv[3]);
+    if (!image) {
+        printf("IMG_Load: %s\n", IMG_GetError());
+        return 1;
+    }
+
+    // load lua file
+    char* source = NULL;
+    FILE* fp = fopen(argv[2], "r");
+    if (fp != NULL) {
+        /* Go to the end of the file. */
+        if (fseek(fp, 0L, SEEK_END) == 0) {
+            /* Get the size of the file. */
+            long bufsize = ftell(fp);
+            if (bufsize == -1) { /* Error */ }
+
+            /* Allocate our buffer to that size. */
+            source = malloc(sizeof(char) * (bufsize + 1));
+
+            /* Go back to the start of the file. */
+            if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
+
+            /* Read the entire file into memory. */
+            size_t newLen = fread(source, sizeof(char), bufsize, fp);
+            if (ferror(fp) != 0) {
+                fputs("Error reading file", stderr);
+            }
+            else {
+                source[newLen++] = '\0'; /* Just to be safe. */
+            }
+        }
+        fclose(fp);
+    }
+
+    play_game(image, source);
+    free(source);
+    SDL_FreeSurface(image);
+
+    return 0;
+}
+
+void play_game(SDL_Surface* image, char* source) {
+    window = SDL_CreateWindow("TinyBit Virtual Console", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
     render_target = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 128, 128);
 
@@ -33,13 +120,6 @@ int main(int argc, char* argv[]) {
     // system initialization
     audio_init();
     memory_init();
-
-    // load spritesheet
-    SDL_Surface* image = IMG_Load("assets/flappy.png");
-    if (!image) {
-        printf("IMG_Load: %s\n", IMG_GetError());
-        return 1;
-    }
 
     SDL_LockSurface(image);
     for (int i = 0; i < image->w * image->h; i++) {
@@ -80,8 +160,7 @@ int main(int argc, char* argv[]) {
 
     // set up lua VM
     L = luaL_newstate();
-    // luaL_openlibs(L);
-    
+
     // load lua libraries
     static const luaL_Reg loadedlibs[] = {
         {LUA_GNAME, luaopen_base},
@@ -92,7 +171,7 @@ int main(int argc, char* argv[]) {
         {NULL, NULL}
     };
 
-    const luaL_Reg *lib;
+    const luaL_Reg* lib;
     for (lib = loadedlibs; lib->func; lib++) {
         luaL_requiref(L, lib->name, lib->func, 1);
         lua_pop(L, 1);  /* remove lib */
@@ -106,7 +185,9 @@ int main(int argc, char* argv[]) {
     lua_setup_memory();
 
     // load lua file
-    luaL_dofile(L, "assets/flappy.lua");
+    if (luaL_dostring(L, source) == LUA_OK) {
+        lua_pop(L, lua_gettop(L));
+    }
 
     // check if special functions are set
     lua_getglobal(L, "_draw");
@@ -140,10 +221,10 @@ int main(int argc, char* argv[]) {
             lua_getglobal(L, "_draw");
             if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
                 lua_pop(L, lua_gettop(L));
-            } else {
-                destroyApplication();
-                return 1;
-            } 
+            }
+            else {
+                break;
+            }
 
             // map display section to render target
             uint32_t* pixels;
@@ -178,19 +259,12 @@ int main(int argc, char* argv[]) {
                 lua_pop(L, lua_gettop(L));
             }
             else {
-                destroyApplication();
-                return 1;
+                break;
             }
         }
 
     }
 
-    destroyApplication();
-
-    return 0;
-}
-
-void destroyApplication() {
     lua_close(L);
     SDL_DestroyTexture(render_target);
     SDL_DestroyRenderer(renderer);

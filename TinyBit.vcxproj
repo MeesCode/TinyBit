@@ -166,6 +166,7 @@
     <ClCompile Include="lua\lzio.c" />
     <ClCompile Include="src\audio.c" />
     <ClCompile Include="src\font.c" />
+    <ClCompile Include="src\getopt.c" />
     <ClCompile Include="src\graphics.c" />
     <ClCompile Include="src\input.c" />
     <ClCompile Include="src\lua_functions.c" />
@@ -175,6 +176,7 @@
   <ItemGroup>
     <ClInclude Include="include\audio.h" />
     <ClInclude Include="include\font.h" />
+    <ClInclude Include="include\getopt.h" />
     <ClInclude Include="include\graphics.h" />
     <ClInclude Include="include\input.h" />
     <ClInclude Include="include\lua_functions.h" />

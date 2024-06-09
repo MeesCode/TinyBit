@@ -195,7 +195,6 @@ int lua_fillp(lua_State* L) {
     }
 
     int pattern = luaL_checkinteger(L, 1);
-    printf("%d\n", pattern);
 
     set_fill_pattern(pattern);
     return 0;
