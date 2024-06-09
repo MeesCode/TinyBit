@@ -33,6 +33,8 @@ lua_State* L;
 SDL_Texture* render_target;
 
 void play_game(SDL_Surface*, char*);
+void boot_console(SDL_Surface*, char*);
+void export_cartridge(SDL_Surface*, char*);
 
 void print_usage() {
     printf("Usage: program [-c file1 file2] [-e file1 file2] [-p file1 file2] [file]\n");
@@ -78,19 +80,14 @@ int main(int argc, char* argv[]) {
     char* source = NULL;
     FILE* fp = fopen(argv[2], "r");
     if (fp != NULL) {
-        /* Go to the end of the file. */
         if (fseek(fp, 0L, SEEK_END) == 0) {
-            /* Get the size of the file. */
             long bufsize = ftell(fp);
             if (bufsize == -1) { /* Error */ }
 
-            /* Allocate our buffer to that size. */
             source = malloc(sizeof(char) * (bufsize + 1));
 
-            /* Go back to the start of the file. */
             if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
 
-            /* Read the entire file into memory. */
             size_t newLen = fread(source, sizeof(char), bufsize, fp);
             if (ferror(fp) != 0) {
                 fputs("Error reading file", stderr);
@@ -102,9 +99,94 @@ int main(int argc, char* argv[]) {
         fclose(fp);
     }
 
-    play_game(image, source);
+    export_cartridge(image, source);
     free(source);
     SDL_FreeSurface(image);
+
+    return 0;
+}
+
+void export_cartridge(SDL_Surface* image, char* source) {
+    // allocate image buffer
+    uint8_t* buffer = (uint8_t*)malloc(768 * 1024 * 4);
+
+    boot_console(image, source);
+
+    // check for titlescreen function
+    lua_getglobal(L, "_titlescreen");
+    bool titlescreen_function = lua_isfunction(L, -1);
+
+    if (!titlescreen_function) {
+        printf("titlescreen function not available");
+    }
+    else {
+        lua_getglobal(L, "_titlescreen");
+        if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
+            lua_pop(L, lua_gettop(L));
+        }
+    }
+
+    // fill buffer with cartridge image
+
+    SDL_Surface* cartridge = IMG_Load("assets/cartridge.png");
+    if (!cartridge) {
+        printf("IMG_Load: %s\n", IMG_GetError());
+        return 1;
+    }
+
+    // put cartridge image in buffer
+    SDL_LockSurface(cartridge);
+    for (int i = 0; i < cartridge->w * cartridge->h; i++) {
+        uint32_t* pixels = (uint32_t*)cartridge->pixels;
+        SDL_GetRGBA(
+            pixels[i],
+            cartridge->format,
+            &buffer[i * 4],
+            &buffer[i * 4 + 1],
+            &buffer[i * 4 + 2],
+            &buffer[i * 4 + 3]
+        );
+    }
+    SDL_UnlockSurface(cartridge);
+
+    // save buffer to surface
+    SDL_Surface* surface = SDL_CreateRGBSurface(0, 768, 1024, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+    SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
+
+    for (int y = 0; y < 1024; y++) {
+        for (int x = 0; x < 768; x++) {
+            uint32_t* target_pixel = (uint32_t*)((uint8_t*)surface->pixels + y * surface->pitch + x * surface->format->BytesPerPixel);
+
+            uint8_t r = 0;
+            uint8_t g = 0;
+            uint8_t b = 0;
+            uint8_t a = 0;
+
+            if (x >= 80 && x < 80 + 512 && y >= 80 && y < 80 + 512) {
+                r = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4];
+                g = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4 + 1];
+                b = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4 + 2];
+                a = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4 + 3];
+            } else {
+                r = buffer[(y * 768 + x) * 4];
+                g = buffer[(y * 768 + x) * 4 + 1];
+                b = buffer[(y * 768 + x) * 4 + 2];
+                a = buffer[(y * 768 + x) * 4 + 3];
+
+            }
+
+            *target_pixel = r << 24 | g << 16 | b << 8 | a;
+        }
+    }
+    
+        
+    SDL_SaveBMP(surface, "test.bmp");
+
+    SDL_FreeSurface(cartridge);
+    SDL_FreeSurface(surface);
+    lua_close(L);
+    IMG_Quit();
+    SDL_Quit();
 
     return 0;
 }
@@ -117,6 +199,91 @@ void play_game(SDL_Surface* image, char* source) {
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetTextureBlendMode(render_target, SDL_BLENDMODE_BLEND);
 
+    boot_console(image, source);
+
+    // check if special functions are set
+    lua_getglobal(L, "_draw");
+    bool draw_function_set = lua_isfunction(L, -1);
+    lua_getglobal(L, "_music");
+    bool music_function_set = lua_isfunction(L, -1);
+    
+    bool running = true;
+    int music_timer = 0;
+    int frame_timer = 0;
+    SDL_Event event;
+
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = false;
+            }
+        }
+
+        // execute draw function, limit to 60fps
+        if (draw_function_set && (millis() - frame_timer > (1000 / 60))) {
+            frame_timer = millis();
+
+            // set and clear intermediate render target
+            SDL_SetRenderTarget(renderer, render_target);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            SDL_RenderClear(renderer);
+
+            // perform lua draw function every frame
+            lua_getglobal(L, "_draw");
+            if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
+                lua_pop(L, lua_gettop(L));
+            } else {
+                break;
+            }
+
+            // map display section to render target
+            uint32_t* pixels;
+            int pitch;
+            SDL_LockTexture(render_target, NULL, &pixels, &pitch);
+
+            for (int y = 0; y < 128; ++y) {
+                for (int x = 0; x < 128; ++x) {
+                    uint8_t r = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4];
+                    uint8_t g = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 1];
+                    uint8_t b = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 2];
+                    uint8_t a = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 3];
+
+                    pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
+                }
+            }
+
+            SDL_UnlockTexture(render_target);
+
+            // redraw window
+            SDL_SetRenderTarget(renderer, NULL);
+            SDL_RenderCopy(renderer, render_target, NULL, NULL);
+            SDL_RenderPresent(renderer);
+        }
+
+        // execute audio function
+        // function is invoked every 8th beat
+        if (music_function_set && (millis() - music_timer) > (60000 / bpm) / 8) {
+            music_timer = millis();
+            lua_getglobal(L, "_music");
+            if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
+                lua_pop(L, lua_gettop(L));
+            } else {
+                break;
+            }
+        }
+
+    }
+
+    lua_close(L);
+    SDL_DestroyTexture(render_target);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_CloseAudioDevice(audio_device);
+    SDL_Quit();
+}
+
+void boot_console(SDL_Surface* image, char* source) {
     // system initialization
     audio_init();
     memory_init();
@@ -183,93 +350,10 @@ void play_game(SDL_Surface* image, char* source) {
     lua_setup_functions();
     lua_setup_input();
     lua_setup_memory();
+    srand((unsigned int)time(NULL));
 
     // load lua file
     if (luaL_dostring(L, source) == LUA_OK) {
         lua_pop(L, lua_gettop(L));
     }
-
-    // check if special functions are set
-    lua_getglobal(L, "_draw");
-    bool draw_function_set = lua_isfunction(L, -1);
-    lua_getglobal(L, "_music");
-    bool music_function_set = lua_isfunction(L, -1);
-
-    srand((unsigned int)time(NULL));
-    bool running = true;
-    int music_timer = 0;
-    int frame_timer = 0;
-    SDL_Event event;
-
-    while (running) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = false;
-            }
-        }
-
-        // execute draw function, limit to 60fps
-        if (draw_function_set && (millis() - frame_timer > (1000 / 60))) {
-            frame_timer = millis();
-
-            // set and clear intermediate render target
-            SDL_SetRenderTarget(renderer, render_target);
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-            SDL_RenderClear(renderer);
-
-            // perform lua draw function every frame
-            lua_getglobal(L, "_draw");
-            if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
-                lua_pop(L, lua_gettop(L));
-            }
-            else {
-                break;
-            }
-
-            // map display section to render target
-            uint32_t* pixels;
-            int pitch;
-            SDL_LockTexture(render_target, NULL, &pixels, &pitch);
-
-            for (int y = 0; y < 128; ++y) {
-                for (int x = 0; x < 128; ++x) {
-                    uint8_t r = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4];
-                    uint8_t g = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 1];
-                    uint8_t b = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 2];
-                    uint8_t a = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 3];
-
-                    pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
-                }
-            }
-
-            SDL_UnlockTexture(render_target);
-
-            // redraw window
-            SDL_SetRenderTarget(renderer, NULL);
-            SDL_RenderCopy(renderer, render_target, NULL, NULL);
-            SDL_RenderPresent(renderer);
-        }
-
-        // execute audio function
-        // function is invoked every 8th beat
-        if (music_function_set && (millis() - music_timer) > (60000 / bpm) / 8) {
-            music_timer = millis();
-            lua_getglobal(L, "_music");
-            if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
-                lua_pop(L, lua_gettop(L));
-            }
-            else {
-                break;
-            }
-        }
-
-    }
-
-    lua_close(L);
-    SDL_DestroyTexture(render_target);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    IMG_Quit();
-    SDL_CloseAudioDevice(audio_device);
-    SDL_Quit();
 }

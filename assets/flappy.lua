@@ -1,8 +1,6 @@
 
 text(255, 255, 255, 255)
 
-prints("joe")
-
 -- variables for physics
 y = 64
 dy = 0
@@ -167,4 +165,11 @@ function _draw()
 		end
 	end
 
+end
+
+function _titlescreen()
+	print("generating title screen")
+	_draw()
+	cursor(20, 20)
+	prints("Flappy Bird Clone\nBy: Mees")
 end
