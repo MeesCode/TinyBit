@@ -12,6 +12,10 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 128
 
+// cartridge dimensions
+#define CARTRIDGE_WIDTH 672
+#define CARTRIDGE_HEIGHT 752
+
 typedef SDL_RendererFlip FLIP;
 typedef uint32_t COLOR;
 

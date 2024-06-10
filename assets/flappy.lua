@@ -168,8 +168,12 @@ function _draw()
 end
 
 function _titlescreen()
-	print("generating title screen")
-	_draw()
-	cursor(20, 20)
-	prints("Flappy Bird Clone\nBy: Mees")
+	for y = 0,128 do
+		for x = 0,128 do
+			fill(x*2, y*2, 255 - (x+y), 255)
+			pset(x, y)
+		end
+	end
+
+	sprit(sprite(101, 5, 17, 12, 64-((17*4)/2), 64-((12*4)/2), 17*4, 12*4))
 end

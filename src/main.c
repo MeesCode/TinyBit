@@ -9,7 +9,6 @@
     #include <SDL/SDL_image.h>
 #endif
 
-
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
@@ -107,8 +106,15 @@ int main(int argc, char* argv[]) {
 }
 
 void export_cartridge(SDL_Surface* image, char* source) {
+
+    // check if game would fit in cartridge
+    if (SCREEN_WIDTH * SCREEN_HEIGHT * 4 + strlen(source) > CARTRIDGE_WIDTH * CARTRIDGE_WIDTH) {
+        printf("catridge too small to fit game");
+        return;
+    }
+
     // allocate image buffer
-    uint8_t* buffer = (uint8_t*)malloc(768 * 1024 * 4);
+    uint8_t* buffer = (uint8_t*)malloc(CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4);
 
     boot_console(image, source);
 
@@ -153,8 +159,9 @@ void export_cartridge(SDL_Surface* image, char* source) {
     SDL_Surface* surface = SDL_CreateRGBSurface(0, 768, 1024, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
     SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
 
-    for (int y = 0; y < 1024; y++) {
-        for (int x = 0; x < 768; x++) {
+    long index = 0;
+    for (int y = 0; y < CARTRIDGE_HEIGHT; y++) {
+        for (int x = 0; x < CARTRIDGE_WIDTH; x++) {
             uint32_t* target_pixel = (uint32_t*)((uint8_t*)surface->pixels + y * surface->pitch + x * surface->format->BytesPerPixel);
 
             uint8_t r = 0;
@@ -168,16 +175,46 @@ void export_cartridge(SDL_Surface* image, char* source) {
                 b = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4 + 2];
                 a = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4 + 3];
             } else {
-                r = buffer[(y * 768 + x) * 4];
-                g = buffer[(y * 768 + x) * 4 + 1];
-                b = buffer[(y * 768 + x) * 4 + 2];
-                a = buffer[(y * 768 + x) * 4 + 3];
-
+                r = buffer[(y * CARTRIDGE_WIDTH + x) * 4];
+                g = buffer[(y * CARTRIDGE_WIDTH + x) * 4 + 1];
+                b = buffer[(y * CARTRIDGE_WIDTH + x) * 4 + 2];
+                a = buffer[(y * CARTRIDGE_WIDTH + x) * 4 + 3];
             }
 
+            if (index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
+                r = (r & 0xffffff00) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 24) & 0xff;
+                g = (g & 0xffffff00) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 16) & 0xff;
+                b = (b & 0xffffff00) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 8) & 0xff;
+                a = (a & 0xffffff00) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 0) & 0xff;
+            } else if(index - SCREEN_HEIGHT * SCREEN_WIDTH * 4 < strlen(source)) {
+                r = (r & 0xffffff00) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 24) & 0xff;
+                g = (g & 0xffffff00) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 16) & 0xff;
+                b = (b & 0xffffff00) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 8) & 0xff;
+                a = (a & 0xffffff00) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 0) & 0xff;
+            }
+             
             *target_pixel = r << 24 | g << 16 | b << 8 | a;
+            index++;
         }
     }
+
+    uint8_t r = 0;
+    uint8_t g = 0;
+    uint8_t b = 0;
+    uint8_t a = 0;
+
+    uint32_t* pixels = (uint32_t*)surface->pixels;
+    SDL_GetRGBA(
+        pixels[0],
+        surface->format,
+        &r,
+        &g,
+        &b,
+        &a
+    );
+
+    printf("input: %x\n", *(uint32_t*)&memory[MEM_SPRITESHEET_START]);
+    printf("output: %08x %08x %08x %08x\n", r, g, b, a);
     
         
     SDL_SaveBMP(surface, "test.bmp");
