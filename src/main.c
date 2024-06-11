@@ -105,13 +105,23 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+void printb(uint8_t v) {
+    unsigned int i, s = 1 << ((sizeof(v) << 3) - 1); // s = only most significant bit at 1
+    for (i = s; i; i >>= 1) printf("%d", v & i || 0);
+}
+
 void export_cartridge(SDL_Surface* image, char* source) {
 
+    int game_size = SCREEN_WIDTH * SCREEN_HEIGHT * 4 + strlen(source);
+    int cartridge_size = CARTRIDGE_WIDTH * CARTRIDGE_WIDTH;
+
     // check if game would fit in cartridge
-    if (SCREEN_WIDTH * SCREEN_HEIGHT * 4 + strlen(source) > CARTRIDGE_WIDTH * CARTRIDGE_WIDTH) {
+    if (game_size > cartridge_size) {
         printf("catridge too small to fit game");
         return;
     }
+
+    printf("game size: %d\ncartridge size: %d\npercentage used: %d%%", game_size, cartridge_size, (int)((float)game_size / (float)cartridge_size * 100.0));
 
     // allocate image buffer
     uint8_t* buffer = (uint8_t*)malloc(CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4);
@@ -131,6 +141,9 @@ void export_cartridge(SDL_Surface* image, char* source) {
             lua_pop(L, lua_gettop(L));
         }
     }
+
+    // reload game in case spritesheet was updated in titlescreen function
+    boot_console(image, source);
 
     // fill buffer with cartridge image
 
@@ -159,6 +172,7 @@ void export_cartridge(SDL_Surface* image, char* source) {
     SDL_Surface* surface = SDL_CreateRGBSurface(0, 768, 1024, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
     SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
 
+    // add image and game data to surface 
     long index = 0;
     for (int y = 0; y < CARTRIDGE_HEIGHT; y++) {
         for (int x = 0; x < CARTRIDGE_WIDTH; x++) {
@@ -169,28 +183,36 @@ void export_cartridge(SDL_Surface* image, char* source) {
             uint8_t b = 0;
             uint8_t a = 0;
 
+            // cover image
             if (x >= 80 && x < 80 + 512 && y >= 80 && y < 80 + 512) {
                 r = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4];
                 g = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4 + 1];
                 b = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4 + 2];
                 a = memory[MEM_DISPLAY_START + (((y-80)/4)*SCREEN_WIDTH + ((x-80)/4)) * 4 + 3];
-            } else {
+            } 
+            
+            // cartridge image
+            else {
                 r = buffer[(y * CARTRIDGE_WIDTH + x) * 4];
                 g = buffer[(y * CARTRIDGE_WIDTH + x) * 4 + 1];
                 b = buffer[(y * CARTRIDGE_WIDTH + x) * 4 + 2];
                 a = buffer[(y * CARTRIDGE_WIDTH + x) * 4 + 3];
             }
 
+            // spritesheet data
             if (index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
-                r = (r & 0xffffff00) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 24) & 0xff;
-                g = (g & 0xffffff00) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 16) & 0xff;
-                b = (b & 0xffffff00) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 8) & 0xff;
-                a = (a & 0xffffff00) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 0) & 0xff;
-            } else if(index - SCREEN_HEIGHT * SCREEN_WIDTH * 4 < strlen(source)) {
-                r = (r & 0xffffff00) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 24) & 0xff;
-                g = (g & 0xffffff00) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 16) & 0xff;
-                b = (b & 0xffffff00) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 8) & 0xff;
-                a = (a & 0xffffff00) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 0) & 0xff;
+                r = (r & 0xfc) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 6) & 0x3;
+                g = (g & 0xfc) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 4) & 0x3;
+                b = (b & 0xfc) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 2) & 0x3;
+                a = (a & 0xfc) | (*(uint32_t*)&memory[MEM_SPRITESHEET_START + index] >> 0) & 0x3;
+            } 
+            
+            // source code
+            else if(index - SCREEN_HEIGHT * SCREEN_WIDTH * 4 < strlen(source)) {
+                r = (r & 0xfc) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 6) & 0x3;
+                g = (g & 0xfc) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 4) & 0x3;
+                b = (b & 0xfc) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 2) & 0x3;
+                a = (a & 0xfc) | (source[index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 0) & 0x3;
             }
              
             *target_pixel = r << 24 | g << 16 | b << 8 | a;
@@ -198,23 +220,31 @@ void export_cartridge(SDL_Surface* image, char* source) {
         }
     }
 
-    uint8_t r = 0;
-    uint8_t g = 0;
-    uint8_t b = 0;
-    uint8_t a = 0;
-
-    uint32_t* pixels = (uint32_t*)surface->pixels;
-    SDL_GetRGBA(
-        pixels[0],
-        surface->format,
-        &r,
-        &g,
-        &b,
-        &a
-    );
-
-    printf("input: %x\n", *(uint32_t*)&memory[MEM_SPRITESHEET_START]);
-    printf("output: %08x %08x %08x %08x\n", r, g, b, a);
+    // uint8_t r = 0;
+    // uint8_t g = 0;
+    // uint8_t b = 0;
+    // uint8_t a = 0;
+    // 
+    // uint32_t* pixels = (uint32_t*)surface->pixels;
+    // SDL_GetRGBA(
+    //     pixels[0],
+    //     surface->format,
+    //     &r,
+    //     &g,
+    //     &b,
+    //     &a
+    // );
+    // 
+    // printf("\n");
+    // printb(*(uint8_t*)&memory[MEM_SPRITESHEET_START]);
+    // printf("\n");
+    // printb(r);
+    // printf(" ");
+    // printb(g);
+    // printf(" ");
+    // printb(b);
+    // printf(" ");
+    // printb(a);
     
         
     SDL_SaveBMP(surface, "test.bmp");
