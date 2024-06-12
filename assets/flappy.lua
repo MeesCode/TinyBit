@@ -175,5 +175,9 @@ function _titlescreen()
 		end
 	end
 
-	sprit(sprite(101, 5, 17, 12, 64-((17*4)/2), 64-((12*4)/2), 17*4, 12*4))
+	sprite(sprite(101, 5, 17, 12, 64-((17*4)/2), 64-((12*4)/2), 17*4, 12*4))
+
+	cursor(30, 100)
+	fill(0,0,0,0)
+	prints("Flappy Bird clone\n    by: Mees")
 end

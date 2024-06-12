@@ -143,7 +143,7 @@ void export_cartridge(SDL_Surface* image, char* source) {
     }
 
     // reload game in case spritesheet was updated in titlescreen function
-    boot_console(image, source);
+    //boot_console(image, source);
 
     // fill buffer with cartridge image
 
@@ -155,7 +155,7 @@ void export_cartridge(SDL_Surface* image, char* source) {
 
     // put cartridge image in buffer
     SDL_LockSurface(cartridge);
-    for (int i = 0; i < cartridge->w * cartridge->h; i++) {
+    for (int i = 0; i < CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT; i++) {
         uint32_t* pixels = (uint32_t*)cartridge->pixels;
         SDL_GetRGBA(
             pixels[i],
@@ -169,7 +169,7 @@ void export_cartridge(SDL_Surface* image, char* source) {
     SDL_UnlockSurface(cartridge);
 
     // save buffer to surface
-    SDL_Surface* surface = SDL_CreateRGBSurface(0, 768, 1024, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+    SDL_Surface* surface = SDL_CreateRGBSurface(0, CARTRIDGE_WIDTH, CARTRIDGE_HEIGHT, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
     SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
 
     // add image and game data to surface 
@@ -220,31 +220,31 @@ void export_cartridge(SDL_Surface* image, char* source) {
         }
     }
 
-    // uint8_t r = 0;
-    // uint8_t g = 0;
-    // uint8_t b = 0;
-    // uint8_t a = 0;
-    // 
-    // uint32_t* pixels = (uint32_t*)surface->pixels;
-    // SDL_GetRGBA(
-    //     pixels[0],
-    //     surface->format,
-    //     &r,
-    //     &g,
-    //     &b,
-    //     &a
-    // );
-    // 
-    // printf("\n");
-    // printb(*(uint8_t*)&memory[MEM_SPRITESHEET_START]);
-    // printf("\n");
-    // printb(r);
-    // printf(" ");
-    // printb(g);
-    // printf(" ");
-    // printb(b);
-    // printf(" ");
-    // printb(a);
+    //uint8_t r = 0;
+    //uint8_t g = 0;
+    //uint8_t b = 0;
+    //uint8_t a = 0;
+    //
+    //uint32_t* pixels = (uint32_t*)surface->pixels;
+    //SDL_GetRGBA(
+    //    pixels[0],
+    //    surface->format,
+    //    &r,
+    //    &g,
+    //    &b,
+    //    &a
+    //);
+    //
+    //printf("\n");
+    //printb(*(uint8_t*)&memory[MEM_SPRITESHEET_START]);
+    //printf("\n");
+    //printb(r);
+    //printf(" ");
+    //printb(g);
+    //printf(" ");
+    //printb(b);
+    //printf(" ");
+    //printb(a);
     
         
     SDL_SaveBMP(surface, "test.bmp");
