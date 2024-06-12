@@ -88,7 +88,7 @@ int lua_random(lua_State* L) {
     int min = (int)luaL_checknumber(L, 1);
     int max = (int)luaL_checknumber(L, 2);
 
-    lua_pushinteger(L, random(min, max));
+    lua_pushinteger(L, random_range(min, max));
     
     return 1;
 }

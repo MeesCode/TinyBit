@@ -132,9 +132,6 @@
     <ClCompile Include="src\font.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\getopt.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lua\lapi.h">

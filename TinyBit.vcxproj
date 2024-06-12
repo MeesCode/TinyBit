@@ -166,7 +166,6 @@
     <ClCompile Include="lua\lzio.c" />
     <ClCompile Include="src\audio.c" />
     <ClCompile Include="src\font.c" />
-    <ClCompile Include="src\getopt.c" />
     <ClCompile Include="src\graphics.c" />
     <ClCompile Include="src\input.c" />
     <ClCompile Include="src\lua_functions.c" />

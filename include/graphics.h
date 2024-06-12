@@ -17,7 +17,7 @@ void set_stroke_width(COLOR);
 void lua_setup_draw();
 
 int millis();
-int random(int, int);
+int random_range(int, int);
 void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH);
 void draw_rect(int x, int y, int w, int h);
 void draw_oval(int x, int y, int w, int h);

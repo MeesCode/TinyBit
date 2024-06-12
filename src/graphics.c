@@ -44,7 +44,7 @@ int millis() {
     return clock() / (CLOCKS_PER_SEC / 1000);
 }
 
-int random(int min, int max) {
+int random_range(int min, int max) {
     return min + rand() / (RAND_MAX / (max - min + 1) + 1);
 }
 

@@ -1,10 +1,8 @@
 
 #ifdef _WIN32
-    #include "getopt.h"
     #include <SDL.h>
     #include <SDL_image.h>
 #else
-    #include <unistd.h>
     #include <SDL/SDL.h>
     #include <SDL/SDL_image.h>
 #endif
