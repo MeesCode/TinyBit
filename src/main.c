@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
         // load spritesheet
         SDL_Surface* image = IMG_Load(argv[2]);
         if (!image) {
-            printf("IMG_Load: %s\n", IMG_GetError());
+            printf("%s\n", IMG_GetError());
             exit(EXIT_FAILURE);
         }
 
@@ -146,7 +146,7 @@ void open_cartridge(char* path) {
     
     SDL_Surface* cartridge = IMG_Load(path);
     if (!cartridge) {
-        printf("IMG_Load: %s\n", IMG_GetError());
+        printf("%s\n", IMG_GetError());
         exit(EXIT_FAILURE);
     }
 
@@ -226,7 +226,7 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
     SDL_Surface* cartridge = IMG_Load("assets/cartridge.png");
     if (!cartridge) {
-        printf("IMG_Load: %s\n", IMG_GetError());
+        printf("%s\n", IMG_GetError());
         exit(EXIT_FAILURE);
     }
 
@@ -393,7 +393,7 @@ void boot_console(SDL_Surface* image, char* source) {
     // load font
     SDL_Surface* font = IMG_Load("assets/font.png");
     if (!font) {
-        printf("IMG_Load: %s\n", IMG_GetError());
+        printf("%s\n", IMG_GetError());
         return 1;
     }
 
