@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
         fclose(fp);
     }
 
-    //export_cartridge(image, source);
+    export_cartridge(image, source);
     open_cartridge();
     free(source);
     SDL_FreeSurface(image);
@@ -145,7 +145,7 @@ void printb(uint8_t v) {
 
 void open_cartridge() {
     
-    SDL_Surface* cartridge = IMG_Load("test.bmp");
+    SDL_Surface* cartridge = IMG_Load("test.png");
     if (!cartridge) {
         printf("IMG_Load: %s\n", IMG_GetError());
         return 1;
@@ -252,11 +252,11 @@ void export_cartridge(SDL_Surface* image, char* source) {
             uint8_t* a = &buffer[pixel_index + 3];
 
             // cover image
-            if (x >= 80 && x < 80 + 512 && y >= 80 && y < 80 + 512) {
-                *r = memory[MEM_DISPLAY_START + (((y - 80) / 4) * SCREEN_WIDTH + ((x - 80) / 4)) * 4];
-                *g = memory[MEM_DISPLAY_START + (((y - 80) / 4) * SCREEN_WIDTH + ((x - 80) / 4)) * 4 + 1];
-                *b = memory[MEM_DISPLAY_START + (((y - 80) / 4) * SCREEN_WIDTH + ((x - 80) / 4)) * 4 + 2];
-                *a = memory[MEM_DISPLAY_START + (((y - 80) / 4) * SCREEN_WIDTH + ((x - 80) / 4)) * 4 + 3];
+            if (x >= 40 && x < 40 + 256 && y >= 40 && y < 40 + 256) {
+                *r = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4];
+                *g = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 1];
+                *b = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 2];
+                *a = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 3];
             }
 
             // spritesheet data
@@ -311,7 +311,7 @@ void export_cartridge(SDL_Surface* image, char* source) {
     // printb(a);
     
         
-    SDL_SaveBMP(surface, "test.bmp");
+    IMG_SavePNG(surface, "test.png");
 
     SDL_FreeSurface(cartridge);
     SDL_FreeSurface(surface);
