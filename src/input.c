@@ -1,5 +1,4 @@
 
-#include <SDL.h>
 #include <stdbool.h>
 
 #include "main.h"

@@ -1,7 +1,12 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <SDL.h>
+#ifdef _WIN32
+    #include <SDL.h>
+#else
+    #include <SDL2/SDL.h>
+#endif
+
 #include "lua.h"
 
 #define FLIP_NONE SDL_FLIP_NONE
