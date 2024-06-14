@@ -9,7 +9,7 @@ SDL_AudioDeviceID audio_device;
 SDL_AudioSpec audio_spec;
 int bpm = 100;
 
-const float frequencies[12][8] = {
+const float frequencies[12][7] = {
     { 25.96f, 51.91f, 103.83f, 207.65f, 415.30f, 830.61f, 1661.22f },
     { 27.50f, 55.00f, 110.00f, 220.00f, 440.00f, 880.00f, 1760.00f },
     { 29.14f, 58.27f, 116.54f, 233.08f, 466.16f, 932.33f, 1864.66f },
