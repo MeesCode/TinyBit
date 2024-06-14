@@ -1,13 +1,4 @@
 
-
-#ifdef _WIN32
-    #include <SDL.h>
-    #include <SDL_image.h>
-#else
-    #include <SDL2/SDL.h>
-    #include <SDL2/SDL_image.h>
-#endif
-
 #include <time.h>
 #include <string.h>
 #include <stdint.h>
@@ -19,9 +10,9 @@
 #include "graphics.h"
 #include "memory.h"
 
-COLOR fillColor = 0;
-COLOR fillColor2 = 0;
-COLOR strokeColor = 0;
+uint32_t fillColor = 0;
+uint32_t fillColor2 = 0;
+uint32_t strokeColor = 0;
 int strokeWidth = 0;
 uint16_t fillPattern = 0;
 
@@ -32,19 +23,20 @@ void lua_setup_draw() {
     lua_setglobal(L, "SCREEN_HEIGHT");
 }
 
-void blend(uint8_t result[4], uint8_t fg[4], uint8_t bg[4]) {
-    float alpha_fg = fg[3] / 255.0f;
-    float alpha_bg = bg[3] / 255.0f;
+void blend(uint32_t* result, uint32_t fg, uint32_t bg) {
+    float alpha_fg = (fg >> 24) / 255.0f;
+    float alpha_bg = (bg >> 24) / 255.0f;
     float alpha_out = alpha_fg + alpha_bg * (1 - alpha_fg);
 
+    *result = 0;
+
     if (alpha_out > 0) {
-        result[0] = (uint8_t)((fg[0] * alpha_fg + bg[0] * alpha_bg * (1 - alpha_fg)) / alpha_out);
-        result[1] = (uint8_t)((fg[1] * alpha_fg + bg[1] * alpha_bg * (1 - alpha_fg)) / alpha_out);
-        result[2] = (uint8_t)((fg[2] * alpha_fg + bg[2] * alpha_bg * (1 - alpha_fg)) / alpha_out);
-    } else {
-        result[0] = result[1] = result[2] = 0;
+        *result = 
+            ((uint8_t)((fg >> 16 & 0xff) * alpha_fg + (bg >> 16 & 0xff) * alpha_bg * (1 - alpha_fg) / alpha_out) << 16) |
+            ((uint8_t)((fg >> 8 & 0xff) * alpha_fg + (bg >> 8 & 0xff) * alpha_bg * (1 - alpha_fg) / alpha_out) << 8) |
+            ((uint8_t)((fg & 0xff) * alpha_fg + (bg & 0xff) * alpha_bg * (1 - alpha_fg) / alpha_out)) |
+            ((uint32_t)(alpha_out * 255) << 24);
     }
-    result[3] = (uint8_t)(alpha_out * 255);
 }
 
 int millis() {
@@ -111,8 +103,6 @@ void draw_oval(int x, int y, int w, int h) {
 
     float rx = w / 2.0f;
     float ry = h / 2.0f;
-    float cx = x + rx;
-    float cy = y + ry;
 
     float rx2 = rx * rx;
     float ry2 = ry * ry;
@@ -168,8 +158,8 @@ void draw_pixel(int x, int y) {
     if(x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT) {
         return;
     }
-    uint32_t* bg = &memory[MEM_DISPLAY_START + (x + (y * SCREEN_WIDTH)) * 4];
-    blend(bg, &fillColor, bg);
+    uint32_t* bg = (uint32_t*)&memory[MEM_DISPLAY_START + (x + (y * SCREEN_WIDTH)) * 4];
+    blend(bg, fillColor, *bg);
 }
 
 void draw_pixel_fill(int x, int y) {

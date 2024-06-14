@@ -1,12 +1,6 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#ifdef _WIN32
-    #include <SDL.h>
-#else
-    #include <SDL2/SDL.h>
-#endif
-
 typedef enum {
 	C = 0,
 	Cs = 1, Db = 1,

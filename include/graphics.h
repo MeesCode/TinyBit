@@ -1,23 +1,18 @@
 #ifndef graphics_H
 #define graphics_H
 
-#ifdef _WIN32
-    #include <SDL.h>
-#else
-    #include <SDL2/SDL.h>
-#endif
-
 #include"main.h"
+#include <stdint.h>
 
-extern COLOR fillColor;
-extern COLOR fillColor2;
-extern COLOR strokeColor;
+extern uint32_t fillColor;
+extern uint32_t fillColor2;
+extern uint32_t strokeColor;
 extern int strokeWidth;
 extern uint16_t fillPattern;
 
-void set_fill_color(COLOR);
-void set_stroke_color(COLOR);
-void set_stroke_width(COLOR);
+void set_fill_color(uint32_t);
+void set_stroke_color(uint32_t);
+void set_stroke_width(uint32_t);
 
 void lua_setup_draw();
 

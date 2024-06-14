@@ -1,12 +1,6 @@
 #ifndef input_H
 #define input_H
 
-#ifdef _WIN32
-    #include <SDL.h>
-#else
-    #include <SDL2/SDL.h>
-#endif
-
 #include <stdbool.h>
 
 typedef enum {

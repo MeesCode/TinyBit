@@ -22,12 +22,9 @@
 #define CARTRIDGE_HEIGHT 376
 
 typedef SDL_RendererFlip FLIP;
-typedef uint32_t COLOR;
 
 extern SDL_Renderer* renderer;
 extern SDL_Texture* render_target;
 extern lua_State* L;
-
-void destroyApplication();
 
 #endif

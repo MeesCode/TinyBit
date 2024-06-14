@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/mees/git/TinyBit/bin",
+            "binaryPath": "/home/mees/git/TinyBit/bin/tinybit",
+            "binaryArgs": []
+        }
+    ]
+}

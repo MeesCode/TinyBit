@@ -3,14 +3,6 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
-#ifdef _WIN32
-    #include <SDL.h>
-    #include <SDL_image.h>
-#else
-    #include <SDL2/SDL.h>
-    #include <SDL2/SDL_image.h>
-#endif
-
 #include "main.h"
 #include "lua_functions.h"
 #include "audio.h"
@@ -290,7 +282,7 @@ int lua_prints(lua_State* L) {
         return 0;
     }
 
-    char* str = luaL_checkstring(L, 1);
+    const char* str = luaL_checkstring(L, 1);
 
     font_prints(str);
     return 0;
