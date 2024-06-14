@@ -4,7 +4,7 @@ SDL_LDFLAGS := $(shell sdl2-config --libs)
 
 # Compiler and flags
 CC = gcc
-CFLAGS = $(SDL_CFLAGS) -Wall -Isrc/ -Iinclude/ -I/user/include -Ilua/
+CFLAGS = $(SDL_CFLAGS) -Wall -Isrc/ -Iinclude/ -Ilua/
 LDFLAGS = $(SDL_LDFLAGS) -lm -lSDL2 -lSDL2_image
 
 # Directories

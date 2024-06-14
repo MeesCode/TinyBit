@@ -25,7 +25,7 @@ extern SDL_AudioSpec audio_spec;
 extern int bpm;
 
 void lua_setup_audio();
-
+void audio_init();
 void set_bpm(int);
 void play_tone(TONE tone, int octave, int eights, WAVEFORM w);
 

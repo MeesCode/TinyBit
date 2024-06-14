@@ -22,6 +22,6 @@ void lua_setup_input() {
 }
 
 bool input_btn(BUTTON b) {
-	const char* state = SDL_GetKeyboardState(NULL);
+	const char* state = (const char*)SDL_GetKeyboardState(NULL);
 	return state[(SDL_Scancode)b] == 1;
 }

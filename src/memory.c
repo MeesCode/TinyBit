@@ -45,8 +45,7 @@ uint8_t mem_peek(int dst) {
     if (dst < 0 || dst > MEM_SIZE) {
         return 0;
     }
-    uint8_t* val = &memory[dst];
-    return val;
+    return *(uint8_t*)&memory[dst];
 }
 
 void mem_poke(int dst, int val){

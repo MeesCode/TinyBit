@@ -252,18 +252,18 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
             // spritesheet data
             if (byte_index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
-                *r = (*r & 0xfc) | (memory[MEM_SPRITESHEET_START + byte_index] >> 6) & 0x3;
-                *g = (*g & 0xfc) | (memory[MEM_SPRITESHEET_START + byte_index] >> 4) & 0x3;
-                *b = (*b & 0xfc) | (memory[MEM_SPRITESHEET_START + byte_index] >> 2) & 0x3;
-                *a = (*a & 0xfc) | (memory[MEM_SPRITESHEET_START + byte_index] >> 0) & 0x3;
+                *r = (*r & 0xfc) | ((memory[MEM_SPRITESHEET_START + byte_index] >> 6) & 0x3);
+                *g = (*g & 0xfc) | ((memory[MEM_SPRITESHEET_START + byte_index] >> 4) & 0x3);
+                *b = (*b & 0xfc) | ((memory[MEM_SPRITESHEET_START + byte_index] >> 2) & 0x3);
+                *a = (*a & 0xfc) | ((memory[MEM_SPRITESHEET_START + byte_index] >> 0) & 0x3);
             }
 
             // source code
             else if (byte_index - SCREEN_WIDTH * SCREEN_HEIGHT * 4 < game_size) {
-                *r = (*r & 0xfc) | (source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 6) & 0x3;
-                *g = (*g & 0xfc) | (source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 4) & 0x3;
-                *b = (*b & 0xfc) | (source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 2) & 0x3;
-                *a = (*a & 0xfc) | (source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 0) & 0x3;
+                *r = (*r & 0xfc) | ((source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 6) & 0x3);
+                *g = (*g & 0xfc) | ((source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 4) & 0x3);
+                *b = (*b & 0xfc) | ((source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 2) & 0x3);
+                *a = (*a & 0xfc) | ((source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 0) & 0x3);
             }
 
         }
@@ -286,7 +286,7 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
     printf("Game exported\n");
 
-    return 0;
+    return;
 }
 
 void play_game(SDL_Surface* image, char* source) {
@@ -337,7 +337,7 @@ void play_game(SDL_Surface* image, char* source) {
             // map display section to render target
             uint32_t* pixels;
             int pitch;
-            SDL_LockTexture(render_target, NULL, &pixels, &pitch);
+            SDL_LockTexture(render_target, NULL, (void**)&pixels, &pitch);
 
             for (int y = 0; y < 128; ++y) {
                 for (int x = 0; x < 128; ++x) {
@@ -392,7 +392,7 @@ void boot_console(SDL_Surface* image, char* source) {
     SDL_Surface* font = IMG_Load("assets/font.png");
     if (!font) {
         printf("%s\n", IMG_GetError());
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     surface_to_buffer(font, memory + MEM_FONT_START);

@@ -31,7 +31,7 @@ void font_cursor(int x, int y) {
 }
 
 void font_prints(const char* str) {
-	char* ptr = str;
+	const char* ptr = str;
 	int location = 0;
 
 	int startX = cursorX;
