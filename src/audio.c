@@ -5,6 +5,8 @@
 #include "main.h"
 #include "audio.h"
 
+#define M_PI 3.14159265358979323846
+
 SDL_AudioDeviceID audio_device;
 SDL_AudioSpec audio_spec;
 int bpm = 100;
@@ -39,10 +41,10 @@ void audio_init(){
 
 void queue_freq_sin(float freq, int ms) {
     float x = 0;
+    printf("freq: %f\n", freq);
     for (int i = 0; i < (audio_spec.freq/1000) * ms; i++) {
 
-        // TODO: fix tone
-        x += freq / (audio_spec.freq / 10);
+        x += 2 * M_PI * freq / audio_spec.freq;
 
         // 5000 is the gain
         int16_t sample = sin(x) * 5000;
@@ -54,6 +56,16 @@ void queue_freq_sin(float freq, int ms) {
 
 void lua_setup_audio() {
     // set lua tone variables
+    lua_pushinteger(L, Ab);
+    lua_setglobal(L, "Ab");
+    lua_pushinteger(L, A);
+    lua_setglobal(L, "A");
+    lua_pushinteger(L, As);
+    lua_setglobal(L, "As");
+    lua_pushinteger(L, Bb);
+    lua_setglobal(L, "Bb");
+    lua_pushinteger(L, B);
+    lua_setglobal(L, "B");
     lua_pushinteger(L, C);
     lua_setglobal(L, "C");
     lua_pushinteger(L, Cs);
@@ -78,16 +90,6 @@ void lua_setup_audio() {
     lua_setglobal(L, "G");
     lua_pushinteger(L, Gs);
     lua_setglobal(L, "Gs");
-    lua_pushinteger(L, Ab);
-    lua_setglobal(L, "Ab");
-    lua_pushinteger(L, A);
-    lua_setglobal(L, "A");
-    lua_pushinteger(L, As);
-    lua_setglobal(L, "As");
-    lua_pushinteger(L, Bb);
-    lua_setglobal(L, "Bb");
-    lua_pushinteger(L, B);
-    lua_setglobal(L, "B");
 
     // set lua waveforms
     lua_pushinteger(L, SIN);
@@ -98,6 +100,8 @@ void play_tone(TONE tone, int octave, int eights, WAVEFORM w ) {
 
     // tone 
     if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || eights < 0) {
+        printf("Invalid tone, octave, or eights\n");
+        printf("tone: %d, octave: %d, eights: %d\n", tone, octave, eights);
         return;
     }
 
