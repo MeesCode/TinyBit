@@ -32,6 +32,8 @@ void lua_setup_functions() {
     lua_setglobal(L, "bpm");
     lua_pushcfunction(L, lua_btn);
     lua_setglobal(L, "btn");
+    lua_pushcfunction(L, lua_btnp);
+    lua_setglobal(L, "btnp");
     lua_pushcfunction(L, lua_mycopy);
     lua_setglobal(L, "copy");
     lua_pushcfunction(L, lua_cls);
@@ -220,6 +222,12 @@ int lua_bpm(lua_State* L) {
 int lua_btn(lua_State* L) {
     BUTTON btn = luaL_checkinteger(L, 1);
     lua_pushboolean(L, input_btn(btn));
+    return 1;
+}
+
+int lua_btnp(lua_State* L) {
+    BUTTON btn = luaL_checkinteger(L, 1);
+    lua_pushboolean(L, input_btnp(btn));
     return 1;
 }
 

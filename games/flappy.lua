@@ -57,13 +57,13 @@ reset()
 function _draw()
 
 	-- control bird using the UP button
-	if btn(UP) then
-		dy = -1.6
+	if btnp(UP) then
+		dy = -1.8
 		start = true
 	end
 
 	-- reset with Z button
-	if btn(Z) then
+	if btnp(Z) then
 		reset()
 	end
 

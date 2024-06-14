@@ -4,17 +4,19 @@
 #include <stdbool.h>
 
 typedef enum {
-	X = SDL_SCANCODE_X,
-	Z = SDL_SCANCODE_Z,
-	UP = SDL_SCANCODE_UP,
-	DOWN = SDL_SCANCODE_DOWN,
-	LEFT = SDL_SCANCODE_LEFT,
-	RIGHT = SDL_SCANCODE_RIGHT,
-	START = SDL_SCANCODE_ESCAPE
+	X,
+	Z,
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
+	START
 } BUTTON;
 
-void lua_setup_input();
+extern bool prev_button_state[7];
 
+void lua_setup_input();
+void save_button_state();
 bool input_btn(BUTTON btn);
 
 #endif

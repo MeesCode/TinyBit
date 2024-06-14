@@ -317,7 +317,7 @@ void play_game(SDL_Surface* image, char* source) {
             }
         }
 
-        // execute draw function, limit to 60fps
+        // execute draw function
         if (draw_function_set && (millis() - frame_timer > (1000 / 60))) {
             frame_timer = millis();
 
@@ -333,6 +333,9 @@ void play_game(SDL_Surface* image, char* source) {
             } else {
                 break;
             }
+
+            // save current button state
+            save_button_state();
 
             // map display section to render target
             uint32_t* pixels;
