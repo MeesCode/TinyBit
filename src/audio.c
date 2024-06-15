@@ -1,15 +1,22 @@
 
+#include <SDL2/SDL_mixer.h>
+
 #include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "main.h"
 #include "audio.h"
 
 #define M_PI 3.14159265358979323846
+#define GAIN 500
 
 SDL_AudioDeviceID audio_device;
 SDL_AudioSpec audio_spec;
 int bpm = 100;
+int channel = 0;
+int volume = 10;
+
 
 const float frequencies[12][7] = {
     { 25.96f, 51.91f, 103.83f, 207.65f, 415.30f, 830.61f, 1661.22f },
@@ -29,29 +36,73 @@ const float frequencies[12][7] = {
 void audio_init(){
     // set up audio
     SDL_Init(SDL_INIT_AUDIO);
-    SDL_zero(audio_spec);
-    audio_spec.freq = 44100;
-    audio_spec.format = AUDIO_S16SYS;
-    audio_spec.channels = 1;
-    audio_spec.samples = 1024;
-    audio_spec.callback = NULL;
-    audio_device = SDL_OpenAudioDevice(NULL, 0, &audio_spec, NULL, 0);
-    SDL_PauseAudioDevice(audio_device, 0);
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
+    Mix_AllocateChannels(4);
 }
 
-void queue_freq_sin(float freq, int ms) {
+void queue_freq_sin(float freq, int ms, int vol, int chan) {
+    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+        printf("return");
+        return;
+    }
     float x = 0;
     printf("freq: %f\n", freq);
-    for (int i = 0; i < (audio_spec.freq/1000) * ms; i++) {
-
-        x += 2 * M_PI * freq / audio_spec.freq;
-
-        // 5000 is the gain
-        int16_t sample = sin(x) * 5000;
-
-        const int sample_size = sizeof(int16_t) * 1;
-        SDL_QueueAudio(audio_device, &sample, sample_size);
+    int samples = (44100/1000) * ms;
+    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
+    for (int i = 0; i < samples; i++) {
+        x += 2 * M_PI * freq / 44100;
+        buffer[i] = sin(x) * GAIN * vol;
     }
+    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
+    Mix_PlayChannel(chan, chunk, 0);
+}
+
+void queue_freq_saw(float freq, int ms, int vol, int chan) {
+    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+        return;
+    }
+    float x = 0;
+    printf("freq: %f\n", freq);
+    int samples = (44100/1000) * ms;
+    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
+    for (int i = 0; i < samples; i++) {
+        x += freq / 44100;
+        if (x >= 1.0f) x -= 1.0f;
+        buffer[i] = (x * 2 - 1) * GAIN * vol; 
+    }
+    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
+    Mix_PlayChannel(chan, chunk, 0);
+}
+
+void queue_freq_square(float freq, int ms, int vol, int chan) {
+    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+        return;
+    }
+    float x = 0;
+    printf("freq: %f\n", freq);
+    int samples = (44100/1000) * ms;
+    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
+    for (int i = 0; i < samples; i++) {
+        x += freq / 44100;
+        if (x >= 1.0f) x -= 1.0f;
+        buffer[i] = (x < 0.5f ? -1 : 1) * GAIN * vol; 
+    }
+    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
+    Mix_PlayChannel(chan, chunk, 0);
+}
+
+void play_noise(int eights, int vol, int chan) {
+    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+        return;
+    }
+    int ms = ((60000 / bpm) / 8) * eights;
+    int samples = (44100/1000) * ms;
+    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
+    for (int i = 0; i < samples; i++) {
+        buffer[i] = (rand() % ((GAIN * vol) * 2)) - (GAIN * vol); 
+    }
+    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
+    Mix_PlayChannel(chan, chunk, 0);
 }
 
 void lua_setup_audio() {
@@ -92,28 +143,54 @@ void lua_setup_audio() {
     lua_setglobal(L, "Gs");
 
     // set lua waveforms
-    lua_pushinteger(L, SIN);
-    lua_setglobal(L, "SIN");
+    lua_pushinteger(L, SINE);
+    lua_setglobal(L, "SINE");
+    lua_pushinteger(L, SAW);
+    lua_setglobal(L, "SAW");
+    lua_pushinteger(L, SQUARE);
+    lua_setglobal(L, "SQUARE");
 }
 
-void play_tone(TONE tone, int octave, int eights, WAVEFORM w ) {
+void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int vol, int chan) {
 
     // tone 
-    if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || eights < 0) {
-        printf("Invalid tone, octave, or eights\n");
-        printf("tone: %d, octave: %d, eights: %d\n", tone, octave, eights);
+    if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || eights < 0 || vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+        printf("return");
         return;
     }
+
+    printf("tone: %d\n", tone);
 
     int ms = ((60000 / bpm) / 8) * eights;
     float freq = frequencies[tone][octave];
 
     switch (w) {
-    case SIN:
-        queue_freq_sin(freq, ms);
+    case SINE:
+        queue_freq_sin(freq, ms, vol, chan);
+        break;
+    case SAW:
+        queue_freq_saw(freq, ms, vol, chan);
+        break;
+    case SQUARE:
+        queue_freq_square(freq, ms, vol, chan);
+        break;
     }
 }
 
 void set_bpm(int new_bpm) {
     bpm = new_bpm;
+}
+
+void set_channel(int new_chan) {
+    if(new_chan < 0 || new_chan > 3) {
+        return;
+    }
+    channel = new_chan;
+}
+
+void set_volume(int new_vol) {
+    if(new_vol < 0 || new_vol > 10) {
+        return;
+    }
+    volume = new_vol;
 }

@@ -60,7 +60,7 @@ function _draw()
 	if btnp(UP) then
 		dy = -1.8
 		start = true
-		tone(A, 3, 1, SIN)
+		tone(F, 3, 1, SINE)
 	end
 
 	-- reset with Z button
@@ -125,7 +125,7 @@ function _draw()
 	if overlap(20, y, 17, 12, pipe_x//1, pipes[1] - pipe_v_dist - 60, 26, 73) or
 	   overlap(20, y, 17, 12, pipe_x//1, pipes[1] + pipe_v_dist, 26, 73) or 
 	   y <= 0 or y >= 128 then
-		tone(C, 3, 1, SIN)
+		noise(1)
 		reset()
 	end
 

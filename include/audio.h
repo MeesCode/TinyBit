@@ -17,16 +17,23 @@ typedef enum {
 } TONE;
 
 typedef enum {
-	SIN = 0
+	SINE,
+	SAW,
+	SQUARE
 } WAVEFORM;
 
 extern SDL_AudioDeviceID audio_device;
 extern SDL_AudioSpec audio_spec;
 extern int bpm;
+extern int channel;
+extern int volume;
 
 void lua_setup_audio();
 void audio_init();
 void set_bpm(int);
-void play_tone(TONE tone, int octave, int eights, WAVEFORM w);
+void set_channel(int);
+void set_volume(int);
+void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int, int);
+void play_noise(int eights, int, int);
 
 #endif
