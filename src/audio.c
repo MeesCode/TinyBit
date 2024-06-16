@@ -42,11 +42,9 @@ void audio_init(){
 
 void queue_freq_sin(float freq, int ms, int vol, int chan) {
     if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
-        printf("return");
         return;
     }
     float x = 0;
-    printf("freq: %f\n", freq);
     int samples = (44100/1000) * ms;
     int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
     for (int i = 0; i < samples; i++) {
@@ -62,7 +60,6 @@ void queue_freq_saw(float freq, int ms, int vol, int chan) {
         return;
     }
     float x = 0;
-    printf("freq: %f\n", freq);
     int samples = (44100/1000) * ms;
     int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
     for (int i = 0; i < samples; i++) {
@@ -79,7 +76,6 @@ void queue_freq_square(float freq, int ms, int vol, int chan) {
         return;
     }
     float x = 0;
-    printf("freq: %f\n", freq);
     int samples = (44100/1000) * ms;
     int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
     for (int i = 0; i < samples; i++) {
@@ -155,11 +151,9 @@ void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int vol, int chan)
 
     // tone 
     if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || eights < 0 || vol < 0 || vol > 10 || chan < 0 || chan > 3) {
-        printf("return");
         return;
     }
 
-    printf("tone: %d\n", tone);
 
     int ms = ((60000 / bpm) / 8) * eights;
     float freq = frequencies[tone][octave];
