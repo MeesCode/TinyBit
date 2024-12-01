@@ -136,6 +136,7 @@ function _draw()
 		pipes[2] = pipes[3]
 		pipes[3] = random(30, 85)
 		points = points + 1
+		tone(F, 4, 1, SINE)
 		print(points)
 	end
 
