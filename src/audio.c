@@ -46,65 +46,48 @@ void audio_init(){
     Mix_AllocateChannels(4);
 }
 
-void queue_freq_sin(float freq, int ms, int vol, int chan) {
-    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+void queue_freq_sin(int16_t* buffer, float freq, int samples, int vol) {
+    if(vol < 0 || vol > 10) {
         return;
     }
     float x = 0;
-    int samples = (44100/1000) * ms;
-    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
     for (int i = 0; i < samples; i++) {
         x += 2 * M_PI * freq / 44100;
         buffer[i] = sin(x) * GAIN * vol;
     }
-    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
-    Mix_PlayChannel(chan, chunk, 0);
 }
 
-void queue_freq_saw(float freq, int ms, int vol, int chan) {
-    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+void queue_freq_saw(int16_t* buffer, float freq, int samples, int vol) {
+    if(vol < 0 || vol > 10) {
         return;
     }
     float x = 0;
-    int samples = (44100/1000) * ms;
-    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
     for (int i = 0; i < samples; i++) {
         x += freq / 44100;
         if (x >= 1.0f) x -= 1.0f;
         buffer[i] = (x * 2 - 1) * GAIN * vol; 
     }
-    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
-    Mix_PlayChannel(chan, chunk, 0);
 }
 
-void queue_freq_square(float freq, int ms, int vol, int chan) {
-    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+void queue_freq_square(int16_t *buffer, float freq, int samples, int vol) {
+    if(vol < 0 || vol > 10) {
         return;
     }
     float x = 0;
-    int samples = (44100/1000) * ms;
-    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
     for (int i = 0; i < samples; i++) {
         x += freq / 44100;
         if (x >= 1.0f) x -= 1.0f;
         buffer[i] = (x < 0.5f ? -1 : 1) * GAIN * vol; 
     }
-    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
-    Mix_PlayChannel(chan, chunk, 0);
 }
 
-void play_noise(int eights, int vol, int chan) {
-    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+void queue_noise(int16_t* buffer, int samples, int vol) {
+    if(vol < 0 || vol > 10) {
         return;
     }
-    int ms = ((60000 / bpm) / 8) * eights;
-    int samples = (44100/1000) * ms;
-    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
     for (int i = 0; i < samples; i++) {
         buffer[i] = (rand() % ((GAIN * vol) * 2)) - (GAIN * vol); 
     }
-    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
-    Mix_PlayChannel(chan, chunk, 0);
 }
 
 void lua_setup_audio() {
@@ -153,28 +136,45 @@ void lua_setup_audio() {
     lua_setglobal(L, "SQUARE");
 }
 
+void play_noise(int eights, int vol, int chan) {
+
+    if (eights < 0 || vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+        return;
+    }
+
+    int ms = ((60000 / bpm) / 8) * eights;
+    int samples = (44100 / 1000) * ms;
+    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
+
+    queue_noise(buffer, samples, vol);
+    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
+    Mix_PlayChannel(chan, chunk, 0);
+}
+
 void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int vol, int chan) {
 
-    // tone 
     if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || eights < 0 || vol < 0 || vol > 10 || chan < 0 || chan > 3) {
         return;
     }
 
-
     int ms = ((60000 / bpm) / 8) * eights;
     float freq = frequencies[tone][octave];
+    int samples = (44100 / 1000) * ms;
+    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
 
     switch (w) {
     case SINE:
-        queue_freq_sin(freq, ms, vol, chan);
+        queue_freq_sin(buffer, freq, samples, vol);
         break;
     case SAW:
-        queue_freq_saw(freq, ms, vol, chan);
+        queue_freq_saw(buffer, freq, samples, vol);
         break;
     case SQUARE:
-        queue_freq_square(freq, ms, vol, chan);
+        queue_freq_square(buffer, freq, samples, vol);
         break;
     }
+    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
+    Mix_PlayChannel(chan, chunk, 0);
 }
 
 void set_bpm(int new_bpm) {
