@@ -2,24 +2,26 @@
 #define AUDIO_H
 
 typedef enum {
-	Ab = 0,
-	A = 1,
-	As = 2, Bb = 2,
-	B = 3,
-	C = 4,
-	Cs = 5, Db = 5,
-	D = 6,
-	Ds = 7, Eb = 7,
-	E = 8,
-	F = 9,
-	Fs = 10, Gb = 10,
-	G = 11, Gs = 11,
+	Ab = 8, Gs = 8,
+	A = 9,
+	As = 10, Bb = 10,
+	B = 11, Cb = 11,
+	C = 0, Bs = 0,
+	Cs = 1, Db = 1,
+	D = 2,
+	Ds = 3, Eb = 3,
+	E = 4, Fb = 4,
+	F = 5, Es = 5,
+	Fs = 6, Gb = 6,
+	G = 7,
 } TONE;
 
 typedef enum {
 	SINE,
 	SAW,
-	SQUARE
+	SQUARE,
+	NOISE,
+	REST
 } WAVEFORM;
 
 extern SDL_AudioDeviceID audio_device;

@@ -10,12 +10,15 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "main.h"
 #include "audio.h"
 
 #define M_PI 3.14159265358979323846
 #define GAIN 500
+#define SAMPLERATE 44100
 
 SDL_AudioDeviceID audio_device;
 SDL_AudioSpec audio_spec;
@@ -23,71 +26,172 @@ int bpm = 100;
 int channel = 0;
 int volume = 10;
 
+int16_t* sound_buffers[5];
+size_t sound_buffer_len[5];
 
-const float frequencies[12][7] = {
-    { 25.96f, 51.91f, 103.83f, 207.65f, 415.30f, 830.61f, 1661.22f },
-    { 27.50f, 55.00f, 110.00f, 220.00f, 440.00f, 880.00f, 1760.00f },
-    { 29.14f, 58.27f, 116.54f, 233.08f, 466.16f, 932.33f, 1864.66f },
-    { 30.87f, 61.74f, 123.47f, 246.94f, 493.88f, 987.77f, 1975.53f },
-    { 32.70f, 65.41f, 130.81f, 261.63f, 523.25f, 1046.50f, 2093.00f },
-    { 34.65f, 69.30f, 138.59f, 277.18f, 554.37f, 1108.73f, 2217.46f },
-    { 36.71f, 73.42f, 146.83f, 293.66f, 587.33f, 1174.66f, 2349.32f },
-    { 38.89f, 77.78f, 155.56f, 311.13f, 622.25f, 1244.51f, 2489.02f },
-    { 41.20f, 82.41f, 164.81f, 329.63f, 659.26f, 1318.51f, 2637.02f },
-    { 43.65f, 87.31f, 174.61f, 349.23f, 698.46f, 1396.91f, 2793.83f },
-    { 46.25f, 92.50f, 185.00f, 369.99f, 739.99f, 1479.98f, 2959.96f },
-    { 49.00f, 98.00f, 196.00f, 392.00f, 783.99f, 1567.98f, 3135.96f },
+void parse_and_play(const char* input);
+
+const float frequencies[12] = {
+    16.35f,
+    17.32f,
+    18.35f,
+    19.45f,
+    20.60f,
+    21.83f,
+    23.12f,
+    24.50f,
+    25.96f,
+    27.50f,
+    29.14f,
+    30.87f,
 };
 
 void audio_init(){
     // set up audio
     SDL_Init(SDL_INIT_AUDIO);
-    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
-    Mix_AllocateChannels(4);
+    Mix_OpenAudio(SAMPLERATE, MIX_DEFAULT_FORMAT, 2, 1024);
+    Mix_AllocateChannels(5);
+
+    for (int i = 0; i < 5; i++) {
+        sound_buffers[i] = (int16_t*)calloc(35000000, sizeof(int16_t));
+        sound_buffer_len[i] = 0;
+    }
+
+    parse_and_play(
+        "C1 SINE E5 1/8\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE C5 1/8\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE E5 1/8\n"
+        "C1 SINE E5 1/8\n"
+        "C1 SINE E5 1/4\n"
+        "\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE D5 1/4\n"
+        "C1 SINE E5 1/8\n"
+        "C1 SINE G5 1/8\n"
+        "C1 SINE G5 1/4\n"
+        "\n"
+        "C1 SINE E5 1/8\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE C5 1/8\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE E5 1/8\n"
+        "C1 SINE E5 1/8\n"
+        "C1 SINE E5 1/8\n"
+        "C1 SINE E5 1/8\n"
+        "\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE E5 1/8\n"
+        "C1 SINE D5 1/8\n"
+        "C1 SINE C5 1/2\n"
+        "\n"
+        "C2 SQUARE C4 1/8\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE E4 1/8\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE C4 1/8\n"
+        "C2 SQUARE C4 1/8\n"
+        "C2 SQUARE C4 1/4\n"
+        "\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE D4 1/4\n"
+        "C2 SQUARE E4 1/8\n"
+        "C2 SQUARE G4 1/8\n"
+        "C2 SQUARE G4 1/4\n"
+        "\n"
+        "C2 SQUARE C4 1/8\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE E4 1/8\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE C4 1/8\n"
+        "C2 SQUARE C4 1/8\n"
+        "C2 SQUARE C4 1/8\n"
+        "C2 SQUARE C4 1/8\n"
+        "\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE E4 1/8\n"
+        "C2 SQUARE D4 1/8\n"
+        "C2 SQUARE C4 1/2\n"
+        "\n"
+        "C3 REST A 1/8\n"
+        "C3 NOISE C3 1/8\n"
+        "C3 REST A 1/8\n"
+        "C3 NOISE C3 1/8\n"
+        "C3 REST A 1/8\n"
+        "C3 NOISE C3 1/8\n"
+        "C3 REST A 1/8\n"
+        "C3 NOISE C3 1/8\n"
+        "\n"
+        "C4 SAW G2 1/4\n"
+        "C4 SAW E3 1/4\n"
+        "C4 SAW G2 1/4\n"
+        "C4 SAW E3 1/4\n"
+        "\n"
+        "C4 SAW F2 1/4\n"
+        "C4 SAW D3 1/4\n"
+        "C4 SAW F2 1/4\n"
+        "C4 SAW D3 1/4\n");
+
 }
 
-void queue_freq_sin(int16_t* buffer, float freq, int samples, int vol) {
+void queue_freq_sin(int channel, float freq, int samples, int vol) {
     if(vol < 0 || vol > 10) {
         return;
     }
     float x = 0;
-    for (int i = 0; i < samples; i++) {
-        x += 2 * M_PI * freq / 44100;
-        buffer[i] = sin(x) * GAIN * vol;
+    for (int i = sound_buffer_len[channel]; i < sound_buffer_len[channel] + samples; i++) {
+        x += 2 * M_PI * freq/SAMPLERATE;
+        sound_buffers[channel][i] = sin(x) * GAIN * vol;
     }
+    sound_buffer_len[channel] += samples;
 }
 
-void queue_freq_saw(int16_t* buffer, float freq, int samples, int vol) {
+void queue_freq_saw(int channel, float freq, int samples, int vol) {
     if(vol < 0 || vol > 10) {
         return;
     }
     float x = 0;
-    for (int i = 0; i < samples; i++) {
-        x += freq / 44100;
+    for (int i = sound_buffer_len[channel]; i < sound_buffer_len[channel] + samples; i++) {
+        x += freq/SAMPLERATE;
         if (x >= 1.0f) x -= 1.0f;
-        buffer[i] = (x * 2 - 1) * GAIN * vol; 
+        sound_buffers[channel][i] = (x * 2 - 1) * GAIN * vol;
     }
+    sound_buffer_len[channel] += samples;
 }
 
-void queue_freq_square(int16_t *buffer, float freq, int samples, int vol) {
+void queue_freq_square(int channel, float freq, int samples, int vol) {
     if(vol < 0 || vol > 10) {
         return;
     }
     float x = 0;
-    for (int i = 0; i < samples; i++) {
-        x += freq / 44100;
+    for (int i = sound_buffer_len[channel]; i < sound_buffer_len[channel] + samples; i++) {
+        x += freq/SAMPLERATE;
         if (x >= 1.0f) x -= 1.0f;
-        buffer[i] = (x < 0.5f ? -1 : 1) * GAIN * vol; 
+        sound_buffers[channel][i] = (x < 0.5f ? -1 : 1) * GAIN * vol;
     }
+    sound_buffer_len[channel] += samples;
 }
 
-void queue_noise(int16_t* buffer, int samples, int vol) {
+void queue_noise(int channel, int samples, int vol) {
     if(vol < 0 || vol > 10) {
         return;
     }
-    for (int i = 0; i < samples; i++) {
-        buffer[i] = (rand() % ((GAIN * vol) * 2)) - (GAIN * vol); 
+    for (int i = sound_buffer_len[channel]; i < sound_buffer_len[channel] + samples; i++) {
+        sound_buffers[channel][i] = (rand() % ((GAIN * vol) * 2)) - (GAIN * vol);
     }
+    sound_buffer_len[channel] += samples;
+}
+
+void queue_rest(int channel, int samples) {
+    for (int i = sound_buffer_len[channel]; i < sound_buffer_len[channel] + samples; i++) {
+        sound_buffers[channel][i] = 0;
+    }
+    sound_buffer_len[channel] += samples;
 }
 
 void lua_setup_audio() {
@@ -142,12 +246,13 @@ void play_noise(int eights, int vol, int chan) {
         return;
     }
 
-    int ms = ((60000 / bpm) / 8) * eights;
-    int samples = (44100 / 1000) * ms;
+    int ms = (60000 / bpm) * eights;
+    int samples = (SAMPLERATE * ms) / 1000;
     int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
 
-    queue_noise(buffer, samples, vol);
-    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
+    sound_buffer_len[0] = 0;
+    queue_noise(0, samples, vol);
+    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)sound_buffers[0], samples * sizeof(int16_t));
     Mix_PlayChannel(chan, chunk, 0);
 }
 
@@ -157,24 +262,144 @@ void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int vol, int chan)
         return;
     }
 
-    int ms = ((60000 / bpm) / 8) * eights;
-    float freq = frequencies[tone][octave];
-    int samples = (44100 / 1000) * ms;
-    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
+    int ms = (60000 / bpm) * eights;
+    int samples = (SAMPLERATE * ms) / 1000;
+    float freq = frequencies[tone] * pow(2, octave);
+
+    sound_buffer_len[0] = 0;
 
     switch (w) {
     case SINE:
-        queue_freq_sin(buffer, freq, samples, vol);
+        queue_freq_sin(0, freq, samples, vol);
         break;
     case SAW:
-        queue_freq_saw(buffer, freq, samples, vol);
+        queue_freq_saw(0, freq, samples, vol);
         break;
     case SQUARE:
-        queue_freq_square(buffer, freq, samples, vol);
+        queue_freq_square(0, freq, samples, vol);
         break;
     }
-    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
+    Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)sound_buffers[0], samples * sizeof(int16_t));
     Mix_PlayChannel(chan, chunk, 0);
+}
+
+void parse_and_play(const char* input) {
+    char line[256];
+    char* input_copy = strdup(input); // Create a modifiable copy of the input
+    char* line_ptr = strtok(input_copy, "\n");
+
+    // clear sound channels
+    for (int i = 0; i < 5; i++) {
+        sound_buffer_len[i] = 0;
+    }
+
+    while (line_ptr != NULL) {
+        strncpy(line, line_ptr, sizeof(line) - 1);
+        line[sizeof(line) - 1] = '\0'; // Ensure null-termination
+
+        // Skip empty lines and lines starting with "BPM"
+        if (strlen(line) == 0) {
+            line_ptr = strtok(NULL, "\n");
+            printf("empty line\n");
+            continue;
+        }
+
+        // Parse the line
+        int chan;
+        char waveform_str[16], note_str[8], duration_str[8];
+        if (sscanf(line, "C%d %15s %7s %7s", &chan, waveform_str, note_str, duration_str) != 4) {
+            printf("invalid line: %s\n", line);
+            line_ptr = strtok(NULL, "\n");
+            continue; // Skip invalid lines
+        }
+
+        // Parse waveform
+        WAVEFORM waveform;
+        if (strcmp(waveform_str, "SINE") == 0) {
+            waveform = SINE;
+        }
+        else if (strcmp(waveform_str, "SQUARE") == 0) {
+            waveform = SQUARE;
+        }
+        else if (strcmp(waveform_str, "SAW") == 0) {
+            waveform = SAW;
+        }
+        else if (strcmp(waveform_str, "NOISE") == 0) {
+            waveform = NOISE;
+        }
+        else if (strcmp(waveform_str, "REST") == 0) {
+            waveform = REST;
+        }
+        else {
+            printf("invalid waveform: %s\n", line);
+            line_ptr = strtok(NULL, "\n");
+            continue; // Skip invalid waveforms
+        }
+
+        // Parse note and octave
+        char note_char = note_str[0];
+        int octave = atoi(&note_str[strlen(note_str) - 1]);
+        TONE tone;
+        switch (note_char) {
+        case 'A': tone = (note_str[1] == '#' || note_str[1] == 's') ? As : (note_str[1] == 'b' || note_str[1] == 'f') ? Ab : A; break;
+        case 'B': tone = (note_str[1] == '#' || note_str[1] == 's') ? Bs : (note_str[1] == 'b' || note_str[1] == 'f') ? Bb : B; break;
+        case 'C': tone = (note_str[1] == '#' || note_str[1] == 's') ? Cs : (note_str[1] == 'b' || note_str[1] == 'f') ? Cb : C; break;
+        case 'D': tone = (note_str[1] == '#' || note_str[1] == 's') ? Ds : (note_str[1] == 'b' || note_str[1] == 'f') ? Db : D; break;
+        case 'E': tone = (note_str[1] == '#' || note_str[1] == 's') ? Es : (note_str[1] == 'b' || note_str[1] == 'f') ? Eb : E; break;
+        case 'F': tone = (note_str[1] == '#' || note_str[1] == 's') ? Fs : (note_str[1] == 'b' || note_str[1] == 'f') ? Fb : F; break;
+        case 'G': tone = (note_str[1] == '#' || note_str[1] == 's') ? Gs : (note_str[1] == 'b' || note_str[1] == 'f') ? Gb : G; break;
+        default: 
+            printf("invalid tone: %s\n", line); 
+            line_ptr = strtok(NULL, "\n"); 
+            continue; // Skip invalid notes
+        }
+
+        // Parse duration as eights
+        int eights = atoi(duration_str);
+        if (strstr(duration_str, "/")) {
+            int numerator, denominator;
+            sscanf(duration_str, "%d/%d", &numerator, &denominator);
+            eights = 8 * numerator / denominator;
+        }
+
+        int ms = (60000 / bpm) * eights;
+        int samples = (SAMPLERATE * ms) / 1000;
+        float freq = frequencies[tone] * pow(2, octave);
+
+        // printf("line: %s, channel %d, tone: %d, octave: %d, waveform: %d, eights: %d, ms: %d\n", line, chan, tone, octave, waveform, eights, ms);
+
+        // Call play_tone
+        switch (waveform) {
+        case SINE:
+            queue_freq_sin(chan, freq, samples, 2);
+            break;
+        case SQUARE:
+            queue_freq_square(chan, freq, samples, 2);
+            break;
+        case SAW:
+            queue_freq_saw(chan, freq, samples, 2);
+            break;
+        case NOISE:
+            queue_noise(chan, samples, 2);
+            break;
+        case REST:
+            queue_rest(chan, samples);
+            break;
+        default:
+            printf("invalid waveform: %s\n", line);
+            continue;
+        }
+
+        line_ptr = strtok(NULL, "\n");
+    }
+
+    for (int i = 1; i <= 4; i++) {
+        // printf("channel %d length: %d\n", i, sound_buffer_len[i]);
+        Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)sound_buffers[i], sound_buffer_len[i] * sizeof(int16_t));
+        Mix_PlayChannel(i, chunk, -1);
+    }
+
+    free(input_copy);
 }
 
 void set_bpm(int new_bpm) {

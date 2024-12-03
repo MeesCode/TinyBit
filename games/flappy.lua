@@ -60,7 +60,7 @@ function _draw()
 	if btnp(UP) then
 		dy = -1.8
 		start = true
-		tone(F, 3, 1, SINE)
+		tone(F, 4, 1, SINE)
 	end
 
 	-- reset with Z button
@@ -136,7 +136,7 @@ function _draw()
 		pipes[2] = pipes[3]
 		pipes[3] = random(30, 85)
 		points = points + 1
-		tone(F, 4, 1, SINE)
+		tone(F, 5, 1, SINE)
 		print(points)
 	end
 
