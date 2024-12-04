@@ -2,10 +2,6 @@
 #define AUDIO_H
 
 typedef enum {
-	Ab = 8, Gs = 8,
-	A = 9,
-	As = 10, Bb = 10,
-	B = 11, Cb = 11,
 	C = 0, Bs = 0,
 	Cs = 1, Db = 1,
 	D = 2,
@@ -14,6 +10,10 @@ typedef enum {
 	F = 5, Es = 5,
 	Fs = 6, Gb = 6,
 	G = 7,
+	Ab = 8, Gs = 8,
+	A = 9,
+	As = 10, Bb = 10,
+	B = 11, Cb = 11,
 } TONE;
 
 typedef enum {
