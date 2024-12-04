@@ -60,7 +60,7 @@ function _draw()
 	if btnp(UP) then
 		dy = -1.8
 		start = true
-		tone(F, 4, 1, SINE)
+		tone(F, 4, 300, SINE)
 	end
 
 	-- reset with Z button
@@ -125,7 +125,7 @@ function _draw()
 	if overlap(20, y, 17, 12, pipe_x//1, pipes[1] - pipe_v_dist - 60, 26, 73) or
 	   overlap(20, y, 17, 12, pipe_x//1, pipes[1] + pipe_v_dist, 26, 73) or 
 	   y <= 0 or y >= 128 then
-		noise(1)
+		noise(300)
 		reset()
 	end
 
@@ -136,7 +136,7 @@ function _draw()
 		pipes[2] = pipes[3]
 		pipes[3] = random(30, 85)
 		points = points + 1
-		tone(F, 5, 1, SINE)
+		tone(F, 5, 300, SINE)
 		print(points)
 	end
 
@@ -180,7 +180,7 @@ function _titlescreen()
 
 	sprite(sprite(101, 5, 17, 12, 64-((17*4)/2), 64-((12*4)/2), 17*4, 12*4))
 
-	cursor(30, 100)
+	cursor(30, 300)
 	fill(0,0,0,0)
 	prints("Flappy Bird clone\n    by: Mees")
 end

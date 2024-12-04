@@ -24,7 +24,6 @@
 SDL_AudioDeviceID audio_device;
 SDL_AudioSpec audio_spec;
 int bpm = 100;
-int channel = 0;
 int volume = 10;
 
 int16_t* sound_buffers[5];
@@ -249,29 +248,27 @@ void lua_setup_audio() {
     lua_setglobal(L, "SQUARE");
 }
 
-void play_noise(int eights, int vol, int chan) {
+void play_noise(int ms, int vol) {
 
-    if (eights < 0 || vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+    if (vol < 0 || vol > 10) {
         return;
     }
 
-    int ms = (60000 / bpm) * eights;
     int samples = (SAMPLERATE * ms) / 1000;
     int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
 
     sound_buffers_len[0] = 0;
     queue_noise(0, samples, vol);
     Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)sound_buffers[0], samples * sizeof(int16_t));
-    Mix_PlayChannel(chan, chunk, 0);
+    Mix_PlayChannel(0, chunk, 0);
 }
 
-void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int vol, int chan) {
+void play_tone(TONE tone, int octave, int ms, WAVEFORM w, int vol) {
 
-    if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || eights < 0 || vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+    if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || vol < 0 || vol > 10) {
         return;
     }
 
-    int ms = (60000 / bpm) * eights;
     int samples = (SAMPLERATE * ms) / 1000;
     float freq = frequencies[tone] * pow(2, octave);
 
@@ -289,11 +286,11 @@ void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int vol, int chan)
         break;
     }
     Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)sound_buffers[0], samples * sizeof(int16_t));
-    Mix_PlayChannel(chan, chunk, 0);
+    Mix_PlayChannel(0, chunk, 0);
 }
 
 bool parse_and_play(const char* input) {
-    char line[256];
+    char line[5120];
     char* input_copy = strdup(input); // Create a modifiable copy of the input
     char* end_str;
     char* line_ptr = strtok_s(input_copy, ";\n", &end_str);
@@ -321,7 +318,7 @@ bool parse_and_play(const char* input) {
         int eights = 1; // Default duration
         TONE tone = C; // Default tone
         int octave = 4; // Default octave
-        int volume = 5; // Default volume
+        int local_volume = volume; // Default volume
 
         // Parse the line
         char* end_token;
@@ -345,8 +342,8 @@ bool parse_and_play(const char* input) {
             } else if (strcmp(token, "REST") == 0) {
                 waveform = REST;
             } else if (token[0] == 'V' && isdigit(token[1])) {
-                volume = atoi(&token[1]);
-                if (volume < 1 || volume > 10) {
+                local_volume = atoi(&token[1]);
+                if (local_volume < 1 || local_volume > 10) {
                     printf("invalid volume: %s\n", token);
                     free(input_copy);
                     return false; // Invalid token
@@ -389,21 +386,21 @@ bool parse_and_play(const char* input) {
         int samples = (SAMPLERATE * ms) / 1000;
         float freq = frequencies[tone] * pow(2, octave - 1);
 
-        printf("line: %s, channel %d, tone: %d, octave: %d, waveform: %d, eights: %d, ms: %d, volume: %d\n", line, chan, tone, octave, waveform, eights, ms, volume);
+        // printf("line: %s, channel %d, tone: %d, octave: %d, waveform: %d, eights: %d, ms: %d, volume: %d\n", line, chan, tone, octave, waveform, eights, ms, local_volume);
 
         // Call play_tone
         switch (waveform) {
         case SINE:
-            queue_freq_sin(chan, freq, samples, volume);
+            queue_freq_sin(chan, freq, samples, local_volume);
             break;
         case SQUARE:
-            queue_freq_square(chan, freq, samples, volume);
+            queue_freq_square(chan, freq, samples, local_volume);
             break;
         case SAW:
-            queue_freq_saw(chan, freq, samples, volume);
+            queue_freq_saw(chan, freq, samples, local_volume);
             break;
         case NOISE:
-            queue_noise(chan, samples, volume);
+            queue_noise(chan, samples, local_volume);
             break;
         case REST:
             queue_rest(chan, samples);
@@ -428,13 +425,6 @@ bool parse_and_play(const char* input) {
 
 void set_bpm(int new_bpm) {
     bpm = new_bpm;
-}
-
-void set_channel(int new_chan) {
-    if(new_chan < 0 || new_chan > 3) {
-        return;
-    }
-    channel = new_chan;
 }
 
 void set_volume(int new_vol) {

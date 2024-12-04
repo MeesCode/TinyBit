@@ -27,7 +27,6 @@ typedef enum {
 extern SDL_AudioDeviceID audio_device;
 extern SDL_AudioSpec audio_spec;
 extern int bpm;
-extern int channel;
 extern int volume;
 
 void lua_setup_audio();
@@ -35,7 +34,8 @@ void audio_init();
 void set_bpm(int);
 void set_channel(int);
 void set_volume(int);
-void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int, int);
-void play_noise(int eights, int, int);
+void play_tone(TONE tone, int octave, int ms, WAVEFORM w, int);
+void play_noise(int ms, int);
+void audio_cleanup();
 
 #endif
