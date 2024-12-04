@@ -277,7 +277,7 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
     // save cartridge
     IMG_SavePNG(surface, path);
-
+    audio_cleanup();
     SDL_FreeSurface(cartridge);
     SDL_FreeSurface(surface);
     lua_close(L);
@@ -376,6 +376,7 @@ void play_game(SDL_Surface* image, char* source) {
     }
 
     lua_close(L);
+    audio_cleanup();
     SDL_DestroyTexture(render_target);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

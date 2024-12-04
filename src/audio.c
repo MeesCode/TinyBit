@@ -141,6 +141,13 @@ void audio_init(){
 
 }
 
+void audio_cleanup(){
+    Mix_CloseAudio();
+    for (int i = 0; i < 5; i++) {
+        free(sound_buffers[i]);
+    }
+}
+
 void queue_freq_sin(int channel, float freq, int samples, int vol) {
     if(vol < 0 || vol > 10) {
         return;
@@ -322,6 +329,11 @@ bool parse_and_play(const char* input) {
         while (token != NULL) {
             if (token[0] == 'C' && token[1] == 'H' && isdigit(token[2])) {
                 chan = atoi(&token[2]);
+                if(chan < 1 || chan > 4) {
+                    printf("invalid channel: %s\n", token);
+                    free(input_copy);
+                    return false; // Invalid token
+                }
             } else if (strcmp(token, "SINE") == 0) {
                 waveform = SINE;
             } else if (strcmp(token, "SQUARE") == 0) {
@@ -335,7 +347,9 @@ bool parse_and_play(const char* input) {
             } else if (token[0] == 'V' && isdigit(token[1])) {
                 volume = atoi(&token[1]);
                 if (volume < 1 || volume > 10) {
-                    volume = 5; // Default volume if out of range
+                    printf("invalid volume: %s\n", token);
+                    free(input_copy);
+                    return false; // Invalid token
                 }
             } else if (strchr(token, '/')) {
                 int numerator, denominator;
