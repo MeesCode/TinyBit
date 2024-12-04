@@ -37,5 +37,6 @@ void set_volume(int);
 void play_tone(TONE tone, int octave, int ms, WAVEFORM w, int);
 void play_noise(int ms, int);
 void audio_cleanup();
+void parse_and_play(const char* input);
 
 #endif

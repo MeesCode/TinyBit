@@ -30,6 +30,8 @@ void lua_setup_functions() {
     lua_setglobal(L, "tone");
     lua_pushcfunction(L, lua_noise);
     lua_setglobal(L, "noise");
+    lua_pushcfunction(L, lua_music);
+    lua_setglobal(L, "music");
     lua_pushcfunction(L, lua_bpm);
     lua_setglobal(L, "bpm");
     lua_pushcfunction(L, lua_btn);
@@ -236,6 +238,18 @@ int lua_noise(lua_State* L) {
         int ms = luaL_checkinteger(L, 1);
         int vol = luaL_checkinteger(L, 2);
         play_noise(ms, vol);
+        return 0;
+    }
+
+    return 0;
+}
+
+int lua_music(lua_State* L) {
+    printf("playing music\n");
+    if (lua_gettop(L) == 1) {
+        const char* string = luaL_checkstring(L, 1);
+        printf("playing music: %s\n", string);
+        parse_and_play(string);
         return 0;
     }
 

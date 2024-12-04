@@ -56,88 +56,6 @@ void audio_init(){
         sound_buffers[i] = (int16_t*)calloc(35000000, sizeof(int16_t));
         sound_buffers_len[i] = 0;
     }
-
-    parse_and_play(
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/8 C5 V3\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/4 E5 V3\n"
-        "\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/4 D5 V3\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/8 G5 V3\n"
-        "CH1 SINE 1/4 G5 V3\n"
-        "\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/8 C5 V3\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/8 E5 V3\n"
-        "CH1 SINE 1/8 D5 V3\n"
-        "CH1 SINE 1/2 C5 V3\n"
-        "\n"
-        "CH2 SQUARE 1/8 C4 V3\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/8 E4 V3\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/8 C4 V3\n"
-        "CH2 SQUARE 1/8 C4 V3\n"
-        "CH2 SQUARE 1/4 C4 V3\n"
-        "\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/4 D4 V3\n"
-        "CH2 SQUARE 1/8 E4 V3\n"
-        "CH2 SQUARE 1/8 G4 V3\n"
-        "CH2 SQUARE 1/4 G4 V3\n"
-        "\n"
-        "CH2 SQUARE 1/8 C4 V3\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/8 E4 V3\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/8 C4 V3\n"
-        "CH2 SQUARE 1/8 C4 V3\n"
-        "CH2 SQUARE 1/8 C4 V3\n"
-        "CH2 SQUARE 1/8 C4 V3\n"
-        "\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/8 E4 V3\n"
-        "CH2 SQUARE 1/8 D4 V3\n"
-        "CH2 SQUARE 1/2 C4 V3\n"
-        "\n"
-        "CH3 REST 1/8 V3\n"
-        "CH3 NOISE 1/8 V3\n"
-        "CH3 REST 1/8 V3\n"
-        "CH3 NOISE 1/8 V3\n"
-        "CH3 REST 1/8 V3\n"
-        "CH3 NOISE 1/8 V3\n"
-        "CH3 REST 1/8 V3\n"
-        "CH3 NOISE 1/8 V3\n"
-        "\n"
-        "CH4 SAW 1/4 G2 V3\n"
-        "CH4 SAW 1/4 E3 V3\n"
-        "CH4 SAW 1/4 G2 V3\n"
-        "CH4 SAW 1/4 E3 V3\n"
-        "\n"
-        "CH4 SAW 1/4 F2 V3\n"
-        "CH4 SAW 1/4 D3 V3\n"
-        "CH4 SAW 1/4 F2 V3\n"
-        "CH4 SAW 1/4 D3 V3\n"
-        );
-
 }
 
 void audio_cleanup(){
@@ -324,6 +242,9 @@ bool parse_and_play(const char* input) {
         char* end_token;
         char* token = strtok_s(line, " ", &end_token);
         while (token != NULL) {
+            while(*token == ' ' || *token == '\t') {
+                token++;
+            }
             if (token[0] == 'C' && token[1] == 'H' && isdigit(token[2])) {
                 chan = atoi(&token[2]);
                 if(chan < 1 || chan > 4) {
@@ -343,7 +264,7 @@ bool parse_and_play(const char* input) {
                 waveform = REST;
             } else if (token[0] == 'V' && isdigit(token[1])) {
                 local_volume = atoi(&token[1]);
-                if (local_volume < 1 || local_volume > 10) {
+                if (local_volume < 0 || local_volume > 10) {
                     printf("invalid volume: %s\n", token);
                     free(input_copy);
                     return false; // Invalid token
@@ -368,6 +289,9 @@ bool parse_and_play(const char* input) {
                     free(input_copy);
                     return false; // Invalid note
                 }
+            } else if(token[0] == '#'){
+                // This is a comment, ignore the rest of the line
+                break;
             } else {
                 printf("invalid token: %s\n", token);
                 free(input_copy);
@@ -378,15 +302,15 @@ bool parse_and_play(const char* input) {
 
         if (chan == -1) {
             printf("missing channel: %s\n", line);
-            free(input_copy);
-            return false; // Missing channel
+            line_ptr = strtok_s(NULL, ";\n", &end_str);
+            continue;
         }
 
         int ms = (60000 / bpm) * eights;
         int samples = (SAMPLERATE * ms) / 1000;
         float freq = frequencies[tone] * pow(2, octave - 1);
 
-        // printf("line: %s, channel %d, tone: %d, octave: %d, waveform: %d, eights: %d, ms: %d, volume: %d\n", line, chan, tone, octave, waveform, eights, ms, local_volume);
+        printf("channel %d, tone: %d, octave: %d, waveform: %d, eights: %d, ms: %d, volume: %d\n", chan, tone, octave, waveform, eights, ms, local_volume);
 
         // Call play_tone
         switch (waveform) {
