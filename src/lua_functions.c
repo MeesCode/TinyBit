@@ -245,10 +245,8 @@ int lua_noise(lua_State* L) {
 }
 
 int lua_music(lua_State* L) {
-    printf("playing music\n");
     if (lua_gettop(L) == 1) {
         const char* string = luaL_checkstring(L, 1);
-        printf("playing music: %s\n", string);
         parse_and_play(string);
         return 0;
     }

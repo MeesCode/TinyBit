@@ -360,19 +360,6 @@ void play_game(SDL_Surface* image, char* source) {
             SDL_RenderCopy(renderer, render_target, NULL, NULL);
             SDL_RenderPresent(renderer);
         }
-
-        // execute audio function
-        // function is invoked every 8th beat
-        if (music_function_set && (millis() - music_timer) > (60000 / bpm) / 8) {
-            music_timer = millis();
-            lua_getglobal(L, "_music");
-            if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
-                lua_pop(L, lua_gettop(L));
-            } else {
-                break;
-            }
-        }
-
     }
 
     lua_close(L);

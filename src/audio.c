@@ -310,7 +310,7 @@ bool parse_and_play(const char* input) {
         int samples = (SAMPLERATE * ms) / 1000;
         float freq = frequencies[tone] * pow(2, octave - 1);
 
-        printf("channel %d, tone: %d, octave: %d, waveform: %d, eights: %d, ms: %d, volume: %d\n", chan, tone, octave, waveform, eights, ms, local_volume);
+        // printf("channel %d, tone: %d, octave: %d, waveform: %d, eights: %d, ms: %d, volume: %d\n", chan, tone, octave, waveform, eights, ms, local_volume);
 
         // Call play_tone
         switch (waveform) {
