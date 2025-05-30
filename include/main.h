@@ -18,8 +18,8 @@
 #define SCREEN_HEIGHT 128
 
 // cartridge dimensions
-#define CARTRIDGE_WIDTH 336
-#define CARTRIDGE_HEIGHT 376
+#define CARTRIDGE_WIDTH 256
+#define CARTRIDGE_HEIGHT 300
 
 typedef SDL_RendererFlip FLIP;
 

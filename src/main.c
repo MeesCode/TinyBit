@@ -189,7 +189,7 @@ void open_cartridge(char* path) {
 void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
     int game_size = SCREEN_WIDTH * SCREEN_HEIGHT * 4 + strlen(source);
-    int cartridge_size = CARTRIDGE_WIDTH * CARTRIDGE_WIDTH;
+    int cartridge_size = CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT;
 
     // check if game would fit in cartridge
     if (game_size > cartridge_size) {
@@ -243,11 +243,11 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
             uint8_t* a = &buffer[pixel_index + 3];
 
             // cover image
-            if (x >= 40 && x < 40 + 256 && y >= 40 && y < 40 + 256) {
-                *r = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4];
-                *g = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 1];
-                *b = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 2];
-                *a = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 3];
+            if (x >= 64 && x < 64 + 128 && y >= 64 && y < 64 + 128) {
+                *r = memory[MEM_DISPLAY_START + ((y - 64) * SCREEN_WIDTH + (x - 64)) * 4];
+                *g = memory[MEM_DISPLAY_START + ((y - 64) * SCREEN_WIDTH + (x - 64)) * 4 + 1];
+                *b = memory[MEM_DISPLAY_START + ((y - 64) * SCREEN_WIDTH + (x - 64)) * 4 + 2];
+                *a = memory[MEM_DISPLAY_START + ((y - 64) * SCREEN_WIDTH + (x - 64)) * 4 + 3];
             }
 
             // spritesheet data

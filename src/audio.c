@@ -52,7 +52,7 @@ void queue_freq_sin(float freq, int ms, int vol, int chan) {
     }
     float x = 0;
     int samples = (44100/1000) * ms;
-    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
+    int16_t* buffer = (int16_t*)calloc(samples, sizeof(int16_t));
     for (int i = 0; i < samples; i++) {
         x += 2 * M_PI * freq / 44100;
         buffer[i] = sin(x) * GAIN * vol;
