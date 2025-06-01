@@ -5,5 +5,10 @@
             "binaryPath": "/home/mees/git/TinyBit/bin/tinybit",
             "binaryArgs": []
         }
-    ]
+    ],
+    "files.associations": {
+        "lua.h": "c",
+        "font.h": "c",
+        "lauxlib.h": "c"
+    }
 }

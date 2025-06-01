@@ -13,24 +13,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
+#include "tinybit/tinybit.h"
 
-#include "lua_functions.h"
-#include "main.h"
-#include "graphics.h"
-#include "audio.h"
-#include "input.h"
-#include "memory.h"
+struct TinyBitMemory tb_mem = {0};
+uint8_t bs = 0;
 
 SDL_Renderer* renderer;
 SDL_Window* window;
 lua_State* L;
 SDL_Texture* render_target;
 
-void play_game(SDL_Surface*, char*);
-void boot_console(SDL_Surface*, char*);
+void play_game();
 void export_cartridge(SDL_Surface*, char*, char*);
 void open_cartridge();
 
@@ -142,54 +135,28 @@ void printb(uint8_t v) {
 
 void open_cartridge(char* path) {
     
-    SDL_Surface* cartridge = IMG_Load(path);
-    if (!cartridge) {
-        printf("%s\n", IMG_GetError());
-        exit(EXIT_FAILURE);
+    tinybit_init(&tb_mem, &bs);
+
+    FILE *fp = fopen(path, "rb");
+
+    // Read the PNG file in chunks
+    uint8_t buf[1024];
+    size_t len;
+    while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
+        tinybit_feed_catridge(buf, len);
     }
 
-    uint8_t* cartridge_buffer = (uint8_t*)malloc(CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4);
-    uint8_t* spritesheet_buffer = (uint8_t*)malloc(SCREEN_WIDTH * SCREEN_HEIGHT * 4);
-    char* source_buffer = (char*)malloc((CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4) - (SCREEN_WIDTH * SCREEN_HEIGHT * 4));
+    fclose(fp);
 
-    surface_to_buffer(cartridge, cartridge_buffer);
+    tinybit_start();
 
-    // iterate over cartridge buffer and extract spritesheet and source code
-    for (int y = 0; y < CARTRIDGE_HEIGHT; y++) {
-        for (int x = 0; x < CARTRIDGE_WIDTH; x++) {
-
-            long pixel_index = ((y * CARTRIDGE_WIDTH) + x) * 4; // indicates pixel location in buffer
-            long byte_index = ((y * CARTRIDGE_WIDTH) + x); // indicates which byte we are saving
-
-            uint8_t r = cartridge_buffer[pixel_index];
-            uint8_t g = cartridge_buffer[pixel_index + 1];
-            uint8_t b = cartridge_buffer[pixel_index + 2];
-            uint8_t a = cartridge_buffer[pixel_index + 3];
-
-            // spritesheet data
-            if (byte_index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
-                spritesheet_buffer[byte_index] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
-            }
-
-            // source code
-            else if (byte_index - SCREEN_WIDTH * SCREEN_HEIGHT * 4 < CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4) {
-                source_buffer[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
-            }
-        }
-    }
-
-    SDL_Surface* surface = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-    SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
-    
-    buffer_to_surface(spritesheet_buffer, surface);
-    
-    play_game(surface, source_buffer);
+    play_game();
 }
 
 void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
-    int game_size = SCREEN_WIDTH * SCREEN_HEIGHT * 4 + strlen(source);
-    int cartridge_size = CARTRIDGE_WIDTH * CARTRIDGE_WIDTH;
+    int game_size = TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4 + strlen(source);
+    int cartridge_size = TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT;
 
     // check if game would fit in cartridge
     if (game_size > cartridge_size) {
@@ -200,9 +167,7 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
     printf("game size: %d\ncartridge size: %d\npercentage used: %d%%\n", game_size, cartridge_size, (int)((float)game_size / (float)cartridge_size * 100.0));
 
     // allocate image buffer
-    uint8_t* buffer = (uint8_t*)malloc(CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4);
-
-    boot_console(image, source);
+    uint8_t* buffer = (uint8_t*)malloc(TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT * 4);
 
     // check for titlescreen function
     lua_getglobal(L, "_titlescreen");
@@ -231,46 +196,38 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
     surface_to_buffer(cartridge, buffer);
 
     // add cover, spritesheet and game data
-    for (int y = 0; y < CARTRIDGE_HEIGHT; y++) {
-        for (int x = 0; x < CARTRIDGE_WIDTH; x++) {
+    for (int y = 0; y < TB_CARTRIDGE_HEIGHT; y++) {
+        for (int x = 0; x < TB_CARTRIDGE_WIDTH; x++) {
 
-            long pixel_index = ((y * CARTRIDGE_WIDTH) + x) * 4; // indicates pixel location in buffer
-            long byte_index = ((y * CARTRIDGE_WIDTH) + x); // indicates which byte we are saving
+            long pixel_index = ((y * TB_CARTRIDGE_WIDTH) + x) * 4; // indicates pixel location in buffer
+            long byte_index = ((y * TB_CARTRIDGE_WIDTH) + x); // indicates which byte we are saving
 
             uint8_t* r = &buffer[pixel_index];
             uint8_t* g = &buffer[pixel_index + 1];
             uint8_t* b = &buffer[pixel_index + 2];
             uint8_t* a = &buffer[pixel_index + 3];
 
-            // cover image
-            if (x >= 40 && x < 40 + 256 && y >= 40 && y < 40 + 256) {
-                *r = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4];
-                *g = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 1];
-                *b = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 2];
-                *a = memory[MEM_DISPLAY_START + (((y - 40) / 2) * SCREEN_WIDTH + ((x - 40) / 2)) * 4 + 3];
-            }
-
             // spritesheet data
-            if (byte_index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
-                *r = (*r & 0xfc) | ((memory[MEM_SPRITESHEET_START + byte_index] >> 6) & 0x3);
-                *g = (*g & 0xfc) | ((memory[MEM_SPRITESHEET_START + byte_index] >> 4) & 0x3);
-                *b = (*b & 0xfc) | ((memory[MEM_SPRITESHEET_START + byte_index] >> 2) & 0x3);
-                *a = (*a & 0xfc) | ((memory[MEM_SPRITESHEET_START + byte_index] >> 0) & 0x3);
+            if (byte_index < TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4) {
+                *r = (*r & 0xfc) | ((tinybit_memory->spritesheet[byte_index] >> 6) & 0x3);
+                *g = (*g & 0xfc) | ((tinybit_memory->spritesheet[byte_index] >> 4) & 0x3);
+                *b = (*b & 0xfc) | ((tinybit_memory->spritesheet[byte_index] >> 2) & 0x3);
+                *a = (*a & 0xfc) | ((tinybit_memory->spritesheet[byte_index] >> 0) & 0x3);
             }
 
             // source code
-            else if (byte_index - SCREEN_WIDTH * SCREEN_HEIGHT * 4 < game_size) {
-                *r = (*r & 0xfc) | ((source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 6) & 0x3);
-                *g = (*g & 0xfc) | ((source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 4) & 0x3);
-                *b = (*b & 0xfc) | ((source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 2) & 0x3);
-                *a = (*a & 0xfc) | ((source[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] >> 0) & 0x3);
+            else if (byte_index - TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4 < game_size) {
+                *r = (*r & 0xfc) | ((source[byte_index - TB_SCREEN_HEIGHT * TB_SCREEN_WIDTH * 4] >> 6) & 0x3);
+                *g = (*g & 0xfc) | ((source[byte_index - TB_SCREEN_HEIGHT * TB_SCREEN_WIDTH * 4] >> 4) & 0x3);
+                *b = (*b & 0xfc) | ((source[byte_index - TB_SCREEN_HEIGHT * TB_SCREEN_WIDTH * 4] >> 2) & 0x3);
+                *a = (*a & 0xfc) | ((source[byte_index - TB_SCREEN_HEIGHT * TB_SCREEN_WIDTH * 4] >> 0) & 0x3);
             }
 
         }
     }
 
     // save buffer to surface
-    SDL_Surface* surface = SDL_CreateRGBSurface(0, CARTRIDGE_WIDTH, CARTRIDGE_HEIGHT, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+    SDL_Surface* surface = SDL_CreateRGBSurface(0, TB_CARTRIDGE_WIDTH, TB_CARTRIDGE_HEIGHT, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
     SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
 
     buffer_to_surface(buffer, surface);
@@ -289,21 +246,13 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
     return;
 }
 
-void play_game(SDL_Surface* image, char* source) {
+void play_game() {
     window = SDL_CreateWindow("TinyBit Virtual Console", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
     render_target = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 128, 128);
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetTextureBlendMode(render_target, SDL_BLENDMODE_BLEND);
-
-    boot_console(image, source);
-
-    // check if special functions are set
-    lua_getglobal(L, "_draw");
-    bool draw_function_set = lua_isfunction(L, -1);
-    lua_getglobal(L, "_music");
-    bool music_function_set = lua_isfunction(L, -1);
     
     bool running = true;
     int music_timer = 0;
@@ -318,7 +267,7 @@ void play_game(SDL_Surface* image, char* source) {
         }
 
         // execute draw function
-        if (draw_function_set && (millis() - frame_timer > (1000 / 60))) {
+        if ((millis() - frame_timer > (1000 / 60))) {
             frame_timer = millis();
 
             // set and clear intermediate render target
@@ -326,16 +275,7 @@ void play_game(SDL_Surface* image, char* source) {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
             SDL_RenderClear(renderer);
 
-            // perform lua draw function every frame
-            lua_getglobal(L, "_draw");
-            if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
-                lua_pop(L, lua_gettop(L));
-            } else {
-                break;
-            }
-
-            // save current button state
-            save_button_state();
+            tinybit_frame();
 
             // map display section to render target
             uint32_t* pixels;
@@ -344,10 +284,10 @@ void play_game(SDL_Surface* image, char* source) {
 
             for (int y = 0; y < 128; ++y) {
                 for (int x = 0; x < 128; ++x) {
-                    uint8_t r = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4];
-                    uint8_t g = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 1];
-                    uint8_t b = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 2];
-                    uint8_t a = memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4 + 3];
+                    uint8_t r = tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 4];
+                    uint8_t g = tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 4 + 1];
+                    uint8_t b = tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 4 + 2];
+                    uint8_t a = tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 4 + 3];
 
                     pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
                 }
@@ -361,17 +301,6 @@ void play_game(SDL_Surface* image, char* source) {
             SDL_RenderPresent(renderer);
         }
 
-        // execute audio function
-        // function is invoked every 8th beat
-        if (music_function_set && (millis() - music_timer) > (60000 / bpm) / 8) {
-            music_timer = millis();
-            lua_getglobal(L, "_music");
-            if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
-                lua_pop(L, lua_gettop(L));
-            } else {
-                break;
-            }
-        }
 
     }
 
@@ -382,53 +311,4 @@ void play_game(SDL_Surface* image, char* source) {
     IMG_Quit();
     SDL_CloseAudioDevice(audio_device);
     SDL_Quit();
-}
-
-void boot_console(SDL_Surface* image, char* source) {
-    // system initialization
-    audio_init();
-    memory_init();
-
-    surface_to_buffer(image, memory + MEM_SPRITESHEET_START);
-
-    // load font
-    SDL_Surface* font = IMG_Load("assets/font.png");
-    if (!font) {
-        printf("%s\n", IMG_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    surface_to_buffer(font, memory + MEM_FONT_START);
-
-    // set up lua VM
-    L = luaL_newstate();
-
-    // load lua libraries
-    static const luaL_Reg loadedlibs[] = {
-        {LUA_GNAME, luaopen_base},
-        {LUA_COLIBNAME, luaopen_coroutine},
-        {LUA_TABLIBNAME, luaopen_table},
-        {LUA_STRLIBNAME, luaopen_string},
-        {LUA_MATHLIBNAME, luaopen_math},
-        {NULL, NULL}
-    };
-
-    const luaL_Reg* lib;
-    for (lib = loadedlibs; lib->func; lib++) {
-        luaL_requiref(L, lib->name, lib->func, 1);
-        lua_pop(L, 1);  /* remove lib */
-    }
-
-    // set up lua variables and functions
-    lua_setup_draw();
-    lua_setup_audio();
-    lua_setup_functions();
-    lua_setup_input();
-    lua_setup_memory();
-    srand((unsigned int)time(NULL));
-
-    // load lua file
-    if (luaL_dostring(L, source) == LUA_OK) {
-        lua_pop(L, lua_gettop(L));
-    }
 }

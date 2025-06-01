@@ -400,3 +400,5 @@ FodyWeavers.xsd
 TinyBit/
 x64/
 bin/
+.claude
+.vscode

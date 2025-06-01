@@ -4,6 +4,7 @@ text(255, 255, 255, 255)
 -- variables for physics
 y = 64
 dy = 0
+r = 0
 
 -- game started
 start = false
@@ -37,6 +38,7 @@ function reset()
 	start = false
 	points = 0
 	pipe_x = 90
+	r = 0
 
 	for i=1, 3 do
 		pipes[i] = random(30, 85)
@@ -61,6 +63,7 @@ function _draw()
 		dy = -1.8
 		start = true
 		tone(F, 3, 1, SINE)
+		r = 30
 	end
 
 	-- reset with Z button
@@ -75,6 +78,7 @@ function _draw()
 	if start then
 		dy = dy + 0.08
 		pipe_x = pipe_x - 0.4
+		r = r - 1.5
 	end
 
 	-- clear previous screen
@@ -99,18 +103,18 @@ function _draw()
 	end
 
 	-- debug info
-	-- fill(0,0,0,255)
-	-- cursor(2, 114)
-	-- prints("Height: " .. math.floor(y) .. "\nPipe x: " .. math.floor(pipe_x))
+	fill(0,0,0,100)
+	cursor(2, 114)
+	prints("Height: " .. math.floor(y) .. "\nPipe x: " .. math.floor(pipe_x))
 
 	-- draw bird
 	local sp = (millis() // 250) % 4
 	if sp == 0 then
-		sprite(101, 5, 17, 12, 20, y, 17, 12)
+		sprite(101, 5, 17, 12, 20, y, 17, 12, r)
 	elseif sp == 1 or sp == 3 then
-		sprite(101, 18, 17, 12, 20, y, 17, 12)
+		sprite(101, 18, 17, 12, 20, y, 17, 12, r)
 	elseif sp == 2 then
-		sprite(101, 31, 17, 12, 20, y, 17, 12)
+		sprite(101, 31, 17, 12, 20, y, 17, 12, r)
 	end
 
 	-- draw hitboxes
