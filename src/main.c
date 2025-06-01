@@ -24,13 +24,12 @@ lua_State* L;
 SDL_Texture* render_target;
 
 void play_game();
-void export_cartridge(SDL_Surface*, char*, char*);
-void open_cartridge();
+void export_cartridge(char*,char*,char*);
+void load_game(char*);
 
 void print_usage() {
     printf("Usage: program [-c file.png file.lua file.tb.png] [-p file.png file.lua] [file.tb.png]\n");
     printf("-c => compress a spritesheet and lua file into a cartridge file\n");
-    printf("-p => play a spritesheet and lua file\n");
     printf("no flags => play a cartridge file\n");
 }
 
@@ -73,52 +72,11 @@ int main(int argc, char* argv[]) {
     }
 
     char* command = argv[1];
-    if ((strcmp(command, "-c") == 0 && argc == 5) || (strcmp(command, "-p") == 0 && argc == 4)) {
-
-        // load spritesheet
-        SDL_Surface* image = IMG_Load(argv[2]);
-        if (!image) {
-            printf("%s\n", IMG_GetError());
-            exit(EXIT_FAILURE);
-        }
-
-        // load lua file
-        char* source = NULL;
-        FILE* fp = fopen(argv[3], "r");
-        if (fp != NULL) {
-            if (fseek(fp, 0L, SEEK_END) == 0) {
-                long bufsize = ftell(fp);
-                if (bufsize == -1) { /* Error */ }
-
-                source = malloc(sizeof(char) * (bufsize + 1));
-
-                if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
-
-                size_t newLen = fread(source, sizeof(char), bufsize, fp);
-                if (ferror(fp) != 0) {
-                    printf("Error reading file");
-                    exit(EXIT_FAILURE);
-                }
-                else {
-                    source[newLen++] = '\0'; /* Just to be safe. */
-                }
-            }
-            fclose(fp);
-        }
-
-        if (strcmp(command, "-c") == 0) {
-            export_cartridge(image, source, argv[4]);
-        }
-        else {
-            play_game(image, source);
-        }
-
-        free(source);
-        SDL_FreeSurface(image);
-
+    if (strcmp(command, "-c") == 0 && argc == 5) {
+        export_cartridge(argv[2],argv[3],argv[4]);
     }
     else if (argc == 2) {
-        open_cartridge(argv[1]);
+        load_game(argv[1]);
     }
     else {
         print_usage();
@@ -128,15 +86,8 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void printb(uint8_t v) {
-    unsigned int i, s = 1 << ((sizeof(v) << 3) - 1); // s = only most significant bit at 1
-    for (i = s; i; i >>= 1) printf("%d", v & i || 0);
-}
-
-void open_cartridge(char* path) {
-    
+void load_game(char* path) {
     tinybit_init(&tb_mem, &bs);
-
     FILE *fp = fopen(path, "rb");
 
     // Read the PNG file in chunks
@@ -147,13 +98,35 @@ void open_cartridge(char* path) {
     }
 
     fclose(fp);
-
     tinybit_start();
-
     play_game();
 }
 
-void export_cartridge(SDL_Surface* image, char* source, char* path) {
+void export_cartridge(char* sprite, char* script, char* path) {
+
+    // load lua file
+    char* source = NULL;
+    FILE* fp = fopen(script, "r");
+    if (fp != NULL) {
+        if (fseek(fp, 0L, SEEK_END) == 0) {
+            long bufsize = ftell(fp);
+            if (bufsize == -1) { /* Error */ }
+
+            source = malloc(sizeof(char) * (bufsize + 1));
+
+            if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
+
+            size_t newLen = fread(source, sizeof(char), bufsize, fp);
+            if (ferror(fp) != 0) {
+                printf("Error reading file");
+                exit(EXIT_FAILURE);
+            }
+            else {
+                source[newLen++] = '\0'; /* Just to be safe. */
+            }
+        }
+        fclose(fp);
+    }
 
     int game_size = TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4 + strlen(source);
     int cartridge_size = TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT;
@@ -168,32 +141,24 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
     // allocate image buffer
     uint8_t* buffer = (uint8_t*)malloc(TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT * 4);
-
-    // check for titlescreen function
-    lua_getglobal(L, "_titlescreen");
-    bool titlescreen_function = lua_isfunction(L, -1);
-
-    if (!titlescreen_function) {
-        printf("titlescreen function not available\n");
-    }
-    else {
-        lua_getglobal(L, "_titlescreen");
-        if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
-            lua_pop(L, lua_gettop(L));
-        }
-    }
-
-    // TODO: possibly reload game, since spritesheet might be modified by _titlescreen funciton
+    uint8_t* spritebuffer = (uint8_t*)malloc(TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4);
 
     // fill buffer with cartridge image
-
     SDL_Surface* cartridge = IMG_Load("assets/cartridge.png");
     if (!cartridge) {
         printf("%s\n", IMG_GetError());
         exit(EXIT_FAILURE);
     }
-
     surface_to_buffer(cartridge, buffer);
+
+    // fill buffer with spritesheet image
+    SDL_Surface* spritesheet = IMG_Load(sprite);
+    if (!spritesheet) {
+        printf("%s\n", IMG_GetError());
+        exit(EXIT_FAILURE);
+    }
+    surface_to_buffer(spritesheet, spritebuffer);
+
 
     // add cover, spritesheet and game data
     for (int y = 0; y < TB_CARTRIDGE_HEIGHT; y++) {
@@ -209,10 +174,10 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
             // spritesheet data
             if (byte_index < TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4) {
-                *r = (*r & 0xfc) | ((tinybit_memory->spritesheet[byte_index] >> 6) & 0x3);
-                *g = (*g & 0xfc) | ((tinybit_memory->spritesheet[byte_index] >> 4) & 0x3);
-                *b = (*b & 0xfc) | ((tinybit_memory->spritesheet[byte_index] >> 2) & 0x3);
-                *a = (*a & 0xfc) | ((tinybit_memory->spritesheet[byte_index] >> 0) & 0x3);
+                *r = (*r & 0xfc) | ((spritebuffer[byte_index] >> 6) & 0x3);
+                *g = (*g & 0xfc) | ((spritebuffer[byte_index] >> 4) & 0x3);
+                *b = (*b & 0xfc) | ((spritebuffer[byte_index] >> 2) & 0x3);
+                *a = (*a & 0xfc) | ((spritebuffer[byte_index] >> 0) & 0x3);
             }
 
             // source code
@@ -232,12 +197,14 @@ void export_cartridge(SDL_Surface* image, char* source, char* path) {
 
     buffer_to_surface(buffer, surface);
 
+    free(source);
+
     // save cartridge
     IMG_SavePNG(surface, path);
 
     SDL_FreeSurface(cartridge);
     SDL_FreeSurface(surface);
-    lua_close(L);
+    SDL_FreeSurface(sprite);
     IMG_Quit();
     SDL_Quit();
 
@@ -275,6 +242,39 @@ void play_game() {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
             SDL_RenderClear(renderer);
 
+            // get button input
+            const char* state = (const char*)SDL_GetKeyboardState(NULL);
+            if(state[(SDL_Scancode) SDL_SCANCODE_UP] == 1) {
+                bs |= (1 << TB_BUTTON_UP);
+            } else {
+                bs &= ~(1 << TB_BUTTON_UP);
+            }
+            if(state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1) {
+                bs |= (1 << TB_BUTTON_DOWN);
+            } else {
+                bs &= ~(1 << TB_BUTTON_DOWN);
+            }
+            if(state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1) {
+                bs |= (1 << TB_BUTTON_LEFT);
+            } else {
+                bs &= ~(1 << TB_BUTTON_LEFT);
+            }
+            if(state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1) {
+                bs |= (1 << TB_BUTTON_RIGHT);
+            } else {
+                bs &= ~(1 << TB_BUTTON_RIGHT);
+            }
+            if(state[(SDL_Scancode) SDL_SCANCODE_A] == 1) {
+                bs |= (1 << TB_BUTTON_A);
+            } else {
+                bs &= ~(1 << TB_BUTTON_A);
+            }
+            if(state[(SDL_Scancode) SDL_SCANCODE_B] == 1) {
+                bs |= (1 << TB_BUTTON_B);
+            } else {
+                bs &= ~(1 << TB_BUTTON_B);
+            }
+
             tinybit_frame();
 
             // map display section to render target
@@ -309,6 +309,6 @@ void play_game() {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     IMG_Quit();
-    SDL_CloseAudioDevice(audio_device);
+    //SDL_CloseAudioDevice(audio_device);
     SDL_Quit();
 }
