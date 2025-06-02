@@ -20,7 +20,6 @@ uint8_t bs = 0;
 
 SDL_Renderer* renderer;
 SDL_Window* window;
-lua_State* L;
 SDL_Texture* render_target;
 
 void play_game();
@@ -304,7 +303,6 @@ void play_game() {
 
     }
 
-    lua_close(L);
     SDL_DestroyTexture(render_target);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
