@@ -101,6 +101,11 @@ void load_game(char* path) {
     play_game();
 }
 
+void printb(uint8_t v) {
+    unsigned int i, s = 1 << ((sizeof(v) << 3) - 1); // s = only most significant bit at 1
+    for (i = s; i; i >>= 1) printf("%d", v & i || 0);
+}
+
 void export_cartridge(char* sprite, char* script, char* path) {
 
     // load lua file
@@ -127,7 +132,7 @@ void export_cartridge(char* sprite, char* script, char* path) {
         fclose(fp);
     }
 
-    int game_size = TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4 + strlen(source);
+    int game_size = TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 2 + strlen(source);
     int cartridge_size = TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT;
 
     // check if game would fit in cartridge
@@ -158,36 +163,52 @@ void export_cartridge(char* sprite, char* script, char* path) {
     }
     surface_to_buffer(spritesheet, spritebuffer);
 
+    long spritesheet_index = 0; // indicates pixel location in spritesheet buffer
+    long source_index = 0; // indicates pixel location in source code buffer
+    long dest_index = 0; // indicates pixel location in destination buffer
 
-    // add cover, spritesheet and game data
-    for (int y = 0; y < TB_CARTRIDGE_HEIGHT; y++) {
-        for (int x = 0; x < TB_CARTRIDGE_WIDTH; x++) {
+    // add spritesheet to cartridge buffer
+    while(spritesheet_index < TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4) {
+        // grab byte from spritesheet buffer
+        uint8_t byte = spritebuffer[spritesheet_index];
+        
+        // split into 4 chunks of 2 bits each
+        uint8_t a = (byte >> 6) & 0x3; // first 2 bits
+        uint8_t b = (byte >> 4) & 0x3; // second 2 bits
+        // uint8_t c = (byte >> 2) & 0x3; // third 2 bits
+        // uint8_t d = (byte >> 0) & 0x3; // last 2 bits
 
-            long pixel_index = ((y * TB_CARTRIDGE_WIDTH) + x) * 4; // indicates pixel location in buffer
-            long byte_index = ((y * TB_CARTRIDGE_WIDTH) + x); // indicates which byte we are saving
+        // write to destination buffer
+        buffer[dest_index] = (buffer[dest_index] & 0xfc) | a; // first 2 bits
+        buffer[dest_index + 1] = (buffer[dest_index + 1] & 0xfc) | b; // second 2 bits
+        // buffer[dest_index + 2] = (buffer[dest_index + 2] & 0xfc) | 0; // third 2 bits
+        // buffer[dest_index + 3] = (buffer[dest_index + 3] & 0xfc) | 0; // fourth 2 bits
 
-            uint8_t* r = &buffer[pixel_index];
-            uint8_t* g = &buffer[pixel_index + 1];
-            uint8_t* b = &buffer[pixel_index + 2];
-            uint8_t* a = &buffer[pixel_index + 3];
+        // increment indices
+        spritesheet_index++;
+        dest_index += 2;
+    }
 
-            // spritesheet data
-            if (byte_index < TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4) {
-                *r = (*r & 0xfc) | ((spritebuffer[byte_index] >> 6) & 0x3);
-                *g = (*g & 0xfc) | ((spritebuffer[byte_index] >> 4) & 0x3);
-                *b = (*b & 0xfc) | ((spritebuffer[byte_index] >> 2) & 0x3);
-                *a = (*a & 0xfc) | ((spritebuffer[byte_index] >> 0) & 0x3);
-            }
+    // add source code to cartridge buffer
+    while(source_index < game_size) {
+        // grab byte from spritesheet buffer
+        uint8_t byte = source[source_index];
+        
+        // split into 4 chunks of 2 bits each
+        uint8_t a = (byte >> 6) & 0x3; // first 2 bits
+        uint8_t b = (byte >> 4) & 0x3; // second 2 bits
+        uint8_t c = (byte >> 2) & 0x3; // third 2 bits
+        uint8_t d = (byte >> 0) & 0x3; // last 2 bits
 
-            // source code
-            else if (byte_index - TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4 < game_size) {
-                *r = (*r & 0xfc) | ((source[byte_index - TB_SCREEN_HEIGHT * TB_SCREEN_WIDTH * 4] >> 6) & 0x3);
-                *g = (*g & 0xfc) | ((source[byte_index - TB_SCREEN_HEIGHT * TB_SCREEN_WIDTH * 4] >> 4) & 0x3);
-                *b = (*b & 0xfc) | ((source[byte_index - TB_SCREEN_HEIGHT * TB_SCREEN_WIDTH * 4] >> 2) & 0x3);
-                *a = (*a & 0xfc) | ((source[byte_index - TB_SCREEN_HEIGHT * TB_SCREEN_WIDTH * 4] >> 0) & 0x3);
-            }
+        // write to destination buffer
+        buffer[dest_index] = (buffer[dest_index] & 0xfc) | a; // first 2 bits
+        buffer[dest_index + 1] = (buffer[dest_index + 1] & 0xfc) | b; // second 2 bits
+        buffer[dest_index + 2] = (buffer[dest_index + 2] & 0xfc) | c; // third 2 bits
+        buffer[dest_index + 3] = (buffer[dest_index + 3] & 0xfc) | d; // fourth 2 bits
 
-        }
+        // increment indices
+        source_index++;
+        dest_index += 4;
     }
 
     // save buffer to surface
@@ -224,6 +245,8 @@ void play_game() {
     int music_timer = 0;
     int frame_timer = 0;
     SDL_Event event;
+
+    printf("%s\n", tinybit_get_source());
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -274,7 +297,9 @@ void play_game() {
                 bs &= ~(1 << TB_BUTTON_B);
             }
 
-            tinybit_frame();
+            if (!tinybit_frame()) {
+                printf("script failed");
+            }
 
             // map display section to render target
             uint32_t* pixels;
@@ -283,12 +308,12 @@ void play_game() {
 
             for (int y = 0; y < 128; ++y) {
                 for (int x = 0; x < 128; ++x) {
-                    uint8_t r = tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 4];
-                    uint8_t g = tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 4 + 1];
-                    uint8_t b = tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 4 + 2];
-                    uint8_t a = tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 4 + 3];
+                    uint8_t r = (tinybit_memory->spritesheet[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
+                    uint8_t g = (tinybit_memory->spritesheet[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
+                    uint8_t b = (tinybit_memory->spritesheet[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
+                    uint8_t a = (tinybit_memory->spritesheet[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
 
-                    pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
+                    pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | 0xff;
                 }
             }
 
