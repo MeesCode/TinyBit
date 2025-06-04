@@ -308,12 +308,12 @@ void play_game() {
 
             for (int y = 0; y < 128; ++y) {
                 for (int x = 0; x < 128; ++x) {
-                    uint8_t r = (tinybit_memory->spritesheet[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
-                    uint8_t g = (tinybit_memory->spritesheet[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
-                    uint8_t b = (tinybit_memory->spritesheet[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
-                    uint8_t a = (tinybit_memory->spritesheet[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
+                    uint8_t r = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
+                    uint8_t g = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
+                    uint8_t b = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
+                    uint8_t a = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
 
-                    pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | 0xff;
+                    pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
                 }
             }
 
