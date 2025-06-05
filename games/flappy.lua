@@ -103,9 +103,9 @@ function _draw()
 	end
 
 	-- debug info
-	-- fill(0,0,0,100)
-	-- cursor(2, 114)
-	-- prints("Height: " .. math.floor(y) .. "\nPipe x: " .. math.floor(pipe_x))
+	fill(0,0,0,100)
+	cursor(2, 114)
+	prints("Height: " .. math.floor(y) .. "\nPipe x: " .. math.floor(pipe_x))
 
 	-- draw bird
 	local sp = (millis() // 250) % 4

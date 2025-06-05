@@ -27,7 +27,7 @@ void export_cartridge(char*,char*,char*);
 void load_game(char*);
 
 void print_usage() {
-    printf("Usage: program [-c file.png file.lua file.tb.png] [-p file.png file.lua] [file.tb.png]\n");
+    printf("Usage: program [-c spritesheet.png script.lua cover.png file.tb.png] [file.tb.png]\n");
     printf("-c => compress a spritesheet and lua file into a cartridge file\n");
     printf("no flags => play a cartridge file\n");
 }
@@ -71,8 +71,8 @@ int main(int argc, char* argv[]) {
     }
 
     char* command = argv[1];
-    if (strcmp(command, "-c") == 0 && argc == 5) {
-        export_cartridge(argv[2],argv[3],argv[4]);
+    if (strcmp(command, "-c") == 0 && argc == 6) {
+        export_cartridge(argv[2],argv[3],argv[4],argv[5]);
     }
     else if (argc == 2) {
         load_game(argv[1]);
@@ -106,7 +106,7 @@ void printb(uint8_t v) {
     for (i = s; i; i >>= 1) printf("%d", v & i || 0);
 }
 
-void export_cartridge(char* sprite, char* script, char* path) {
+void export_cartridge(char* sprite, char* script, char* cover, char* path) {
 
     // load lua file
     char* source = NULL;
@@ -146,6 +146,7 @@ void export_cartridge(char* sprite, char* script, char* path) {
     // allocate image buffer
     uint8_t* buffer = (uint8_t*)malloc(TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT * 4);
     uint8_t* spritebuffer = (uint8_t*)malloc(TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4);
+    uint8_t* coverbuffer = (uint8_t*)malloc(TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4);
 
     // fill buffer with cartridge image
     SDL_Surface* cartridge = IMG_Load("assets/cartridge.png");
@@ -163,6 +164,25 @@ void export_cartridge(char* sprite, char* script, char* path) {
     }
     surface_to_buffer(spritesheet, spritebuffer);
 
+    SDL_Surface* coversurface = IMG_Load(cover);
+    if (!coversurface) {
+        printf("%s\n", IMG_GetError());
+        exit(EXIT_FAILURE);
+    }
+    surface_to_buffer(coversurface, coverbuffer);
+
+    // add cover image to cartridge buffer
+    for (int y = 0; y < TB_SCREEN_HEIGHT; ++y) {
+        for (int x = 0; x < TB_SCREEN_WIDTH; ++x) {
+            uint32_t* target_pixel = (uint32_t*)(buffer + ((y+36) * TB_CARTRIDGE_WIDTH + (x+36)) * 4);
+            uint8_t r = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4];
+            uint8_t g = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4 + 1];
+            uint8_t b = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4 + 2];
+            uint8_t a = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4 + 3];
+            *target_pixel = a << 24 | b << 16 | g << 8 | r;
+        }
+    }
+
     long spritesheet_index = 0; // indicates pixel location in spritesheet buffer
     long source_index = 0; // indicates pixel location in source code buffer
     long dest_index = 0; // indicates pixel location in destination buffer
@@ -175,14 +195,10 @@ void export_cartridge(char* sprite, char* script, char* path) {
         // split into 4 chunks of 2 bits each
         uint8_t a = (byte >> 6) & 0x3; // first 2 bits
         uint8_t b = (byte >> 4) & 0x3; // second 2 bits
-        // uint8_t c = (byte >> 2) & 0x3; // third 2 bits
-        // uint8_t d = (byte >> 0) & 0x3; // last 2 bits
 
         // write to destination buffer
         buffer[dest_index] = (buffer[dest_index] & 0xfc) | a; // first 2 bits
         buffer[dest_index + 1] = (buffer[dest_index + 1] & 0xfc) | b; // second 2 bits
-        // buffer[dest_index + 2] = (buffer[dest_index + 2] & 0xfc) | 0; // third 2 bits
-        // buffer[dest_index + 3] = (buffer[dest_index + 3] & 0xfc) | 0; // fourth 2 bits
 
         // increment indices
         spritesheet_index++;
@@ -245,8 +261,6 @@ void play_game() {
     int music_timer = 0;
     int frame_timer = 0;
     SDL_Event event;
-
-    printf("%s\n", tinybit_get_source());
 
     while (running) {
         while (SDL_PollEvent(&event)) {
