@@ -263,6 +263,8 @@ void play_game() {
     SDL_Event event;
 
     while (running) {
+        uint32_t frame_start = SDL_GetTicks();
+
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
@@ -270,76 +272,77 @@ void play_game() {
         }
 
         // execute draw function
-        if ((millis() - frame_timer > (1000 / 60))) {
-            frame_timer = millis();
+        // (no need to check millis/frame_timer here, just run every loop)
+        // set and clear intermediate render target
+        SDL_SetRenderTarget(renderer, render_target);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+        SDL_RenderClear(renderer);
 
-            // set and clear intermediate render target
-            SDL_SetRenderTarget(renderer, render_target);
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-            SDL_RenderClear(renderer);
-
-            // get button input
-            const char* state = (const char*)SDL_GetKeyboardState(NULL);
-            if(state[(SDL_Scancode) SDL_SCANCODE_UP] == 1) {
-                bs |= (1 << TB_BUTTON_UP);
-            } else {
-                bs &= ~(1 << TB_BUTTON_UP);
-            }
-            if(state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1) {
-                bs |= (1 << TB_BUTTON_DOWN);
-            } else {
-                bs &= ~(1 << TB_BUTTON_DOWN);
-            }
-            if(state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1) {
-                bs |= (1 << TB_BUTTON_LEFT);
-            } else {
-                bs &= ~(1 << TB_BUTTON_LEFT);
-            }
-            if(state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1) {
-                bs |= (1 << TB_BUTTON_RIGHT);
-            } else {
-                bs &= ~(1 << TB_BUTTON_RIGHT);
-            }
-            if(state[(SDL_Scancode) SDL_SCANCODE_A] == 1) {
-                bs |= (1 << TB_BUTTON_A);
-            } else {
-                bs &= ~(1 << TB_BUTTON_A);
-            }
-            if(state[(SDL_Scancode) SDL_SCANCODE_B] == 1) {
-                bs |= (1 << TB_BUTTON_B);
-            } else {
-                bs &= ~(1 << TB_BUTTON_B);
-            }
-
-            if (!tinybit_frame()) {
-                printf("script failed");
-            }
-
-            // map display section to render target
-            uint32_t* pixels;
-            int pitch;
-            SDL_LockTexture(render_target, NULL, (void**)&pixels, &pitch);
-
-            for (int y = 0; y < 128; ++y) {
-                for (int x = 0; x < 128; ++x) {
-                    uint8_t r = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
-                    uint8_t g = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
-                    uint8_t b = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
-                    uint8_t a = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
-
-                    pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
-                }
-            }
-
-            SDL_UnlockTexture(render_target);
-
-            // redraw window
-            SDL_SetRenderTarget(renderer, NULL);
-            SDL_RenderCopy(renderer, render_target, NULL, NULL);
-            SDL_RenderPresent(renderer);
+        // get button input
+        const char* state = (const char*)SDL_GetKeyboardState(NULL);
+        if(state[(SDL_Scancode) SDL_SCANCODE_UP] == 1) {
+            bs |= (1 << TB_BUTTON_UP);
+        } else {
+            bs &= ~(1 << TB_BUTTON_UP);
+        }
+        if(state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1) {
+            bs |= (1 << TB_BUTTON_DOWN);
+        } else {
+            bs &= ~(1 << TB_BUTTON_DOWN);
+        }
+        if(state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1) {
+            bs |= (1 << TB_BUTTON_LEFT);
+        } else {
+            bs &= ~(1 << TB_BUTTON_LEFT);
+        }
+        if(state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1) {
+            bs |= (1 << TB_BUTTON_RIGHT);
+        } else {
+            bs &= ~(1 << TB_BUTTON_RIGHT);
+        }
+        if(state[(SDL_Scancode) SDL_SCANCODE_A] == 1) {
+            bs |= (1 << TB_BUTTON_A);
+        } else {
+            bs &= ~(1 << TB_BUTTON_A);
+        }
+        if(state[(SDL_Scancode) SDL_SCANCODE_B] == 1) {
+            bs |= (1 << TB_BUTTON_B);
+        } else {
+            bs &= ~(1 << TB_BUTTON_B);
         }
 
+        if (!tinybit_frame()) {
+            printf("script failed");
+        }
 
+        // map display section to render target
+        uint32_t* pixels;
+        int pitch;
+        SDL_LockTexture(render_target, NULL, (void**)&pixels, &pitch);
+
+        for (int y = 0; y < 128; ++y) {
+            for (int x = 0; x < 128; ++x) {
+                uint8_t r = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
+                uint8_t g = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
+                uint8_t b = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
+                uint8_t a = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
+
+                pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
+            }
+        }
+
+        SDL_UnlockTexture(render_target);
+
+        // redraw window
+        SDL_SetRenderTarget(renderer, NULL);
+        SDL_RenderCopy(renderer, render_target, NULL, NULL);
+        SDL_RenderPresent(renderer);
+
+        // --- FPS limiting ---
+        uint32_t frame_time = SDL_GetTicks() - frame_start;
+        if (frame_time < 16) {
+            SDL_Delay(16 - frame_time);
+        }
     }
 
     SDL_DestroyTexture(render_target);
