@@ -23,7 +23,7 @@ SDL_Window* window;
 SDL_Texture* render_target;
 
 void play_game();
-void export_cartridge(char*,char*,char*);
+void export_cartridge(char*,char*,char*,char*);
 void load_game(char*);
 
 void print_usage() {
@@ -149,7 +149,7 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
     uint8_t* coverbuffer = (uint8_t*)malloc(TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4);
 
     // fill buffer with cartridge image
-    SDL_Surface* cartridge = IMG_Load("assets/cartridge.png");
+    SDL_Surface* cartridge = IMG_Load("assets/cartridge2.png");
     if (!cartridge) {
         printf("%s\n", IMG_GetError());
         exit(EXIT_FAILURE);
@@ -174,7 +174,7 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
     // add cover image to cartridge buffer
     for (int y = 0; y < TB_SCREEN_HEIGHT; ++y) {
         for (int x = 0; x < TB_SCREEN_WIDTH; ++x) {
-            uint32_t* target_pixel = (uint32_t*)(buffer + ((y+36) * TB_CARTRIDGE_WIDTH + (x+36)) * 4);
+            uint32_t* target_pixel = (uint32_t*)(buffer + ((y+34) * TB_CARTRIDGE_WIDTH + (x+35)) * 4);
             uint8_t r = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4];
             uint8_t g = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4 + 1];
             uint8_t b = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4 + 2];
@@ -240,7 +240,7 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
 
     SDL_FreeSurface(cartridge);
     SDL_FreeSurface(surface);
-    SDL_FreeSurface(sprite);
+    SDL_FreeSurface(spritesheet);
     IMG_Quit();
     SDL_Quit();
 

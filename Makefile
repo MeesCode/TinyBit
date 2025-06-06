@@ -5,11 +5,13 @@ SDL_LDFLAGS := $(shell sdl2-config --libs)
 # Compiler and flags
 CC = gcc
 CFLAGS = $(SDL_CFLAGS) -Wall -Isrc/ -Iinclude/ -Ilua/
-LDFLAGS = $(SDL_LDFLAGS) -lm -lSDL2 -lSDL2_image -lSDL2_mixer
+LDFLAGS = $(SDL_LDFLAGS) -lm -lSDL2 -lSDL2_image 
 
 # Directories
 SRCDIR = src
-LUADIR = lua
+LUADIR = src/tinybit/lua
+TBDIR = src/tinybit
+PNGDIR = src/tinybit/pngle
 INCDIR = include
 BINDIR = bin
 ASSETDIR = assets
@@ -25,9 +27,12 @@ ASSETDIR_INSTALL = $(PREFIX)/share/tinybit
 # Source files
 SRC_FILES = $(wildcard $(SRCDIR)/*.c)
 LUA_FILES = $(wildcard $(LUADIR)/*.c)
+TB_FILES = $(wildcard $(TBDIR)/*.c)
+PNG_FILES = $(wildcard $(PNGDIR)/*.c)
 
 # Object files
-OBJECTS = $(SRC_FILES:$(SRCDIR)/%.c=$(BINDIR)/%.o) $(LUA_FILES:$(LUADIR)/%.c=$(BINDIR)/%.o)
+OBJECTS = $(SRC_FILES:$(SRCDIR)/%.c=$(BINDIR)/%.o) $(LUA_FILES:$(LUADIR)/%.c=$(BINDIR)/%.o) \
+		   $(TB_FILES:$(TBDIR)/%.c=$(BINDIR)/%.o) $(PNG_FILES:$(PNGDIR)/%.c=$(BINDIR)/%.o)
 
 # Default target
 all: $(TARGET) copy-assets
@@ -44,6 +49,16 @@ $(BINDIR)/%.o: $(SRCDIR)/%.c
 
 # Rule to build object files from lua
 $(BINDIR)/%.o: $(LUADIR)/%.c
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Rule to build object files from tinybit
+$(BINDIR)/%.o: $(TBDIR)/%.c
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Rule to build object files from pngle
+$(BINDIR)/%.o: $(PNGDIR)/%.c
 	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
