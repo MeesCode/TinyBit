@@ -206,7 +206,7 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
     }
 
     // add source code to cartridge buffer
-    while(source_index < game_size) {
+    while(source_index <= strlen(source)) {
         // grab byte from spritesheet buffer
         uint8_t byte = source[source_index];
         
@@ -258,8 +258,6 @@ void play_game() {
     SDL_SetTextureBlendMode(render_target, SDL_BLENDMODE_BLEND);
     
     bool running = true;
-    int music_timer = 0;
-    int frame_timer = 0;
     SDL_Event event;
 
     while (running) {
