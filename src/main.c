@@ -87,6 +87,7 @@ int main(int argc, char* argv[]) {
 
 void load_game(char* path) {
     tinybit_init(&tb_mem, &bs);
+    tinybit_set_log(printf);
     FILE *fp = fopen(path, "rb");
 
     // Read the PNG file in chunks
@@ -307,6 +308,11 @@ void play_game() {
             bs |= (1 << TB_BUTTON_B);
         } else {
             bs &= ~(1 << TB_BUTTON_B);
+        }
+
+        // quit if ESC is pressed
+        if(state[(SDL_Scancode) SDL_SCANCODE_ESCAPE] == 1) {
+            return;
         }
 
         if (!tinybit_frame()) {

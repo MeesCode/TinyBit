@@ -31,6 +31,8 @@ num_spr = {
 
 points = 0
 
+log("Flappy Bird clone by Mees")
+
 -- reset the game to the initial state
 function reset()
 	y = 64
@@ -105,7 +107,7 @@ function _draw()
 	-- debug info
 	-- fill(0, 0, 0, 100)
 	-- cursor(2, 114)
-	-- prints("Height: " .. math.floor(y) .. "\nPipe x: " .. math.floor(pipe_x))
+	-- print("Height: " .. math.floor(y) .. "\nPipe x: " .. math.floor(pipe_x))
 
 	-- draw bird
 	local sp = (millis() // 250) % 4
@@ -141,7 +143,7 @@ function _draw()
 		pipes[3] = random(30, 85)
 		points = points + 1
 		tone(F, 4, 1, SINE)
-		print(points)
+		log(points)
 	end
 
 	-- draw points on screen
@@ -186,5 +188,5 @@ function _titlescreen()
 
 	cursor(30, 100)
 	fill(0,0,0,0)
-	prints("Flappy Bird clone\n    by: Mees")
+	print("Flappy Bird clone\n    by: Mees")
 end
