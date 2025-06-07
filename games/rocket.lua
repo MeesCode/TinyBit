@@ -18,26 +18,60 @@ for i=1,30 do
     table.insert(stars, star)
 end
 
+text(255,255,255,255)
+
+running = true
+
 function _draw()
+
+    if not running then
+        if btn(UP) then
+            running = true
+            x = 64
+            y = 64
+            dy = 0
+            dx = 0
+            r = 0
+        end
+        return
+    end
 
     cls()
 
-    -- physics
+    -- gravity
     dy = dy + 0.01
+
+    -- in the air
+    if y < 90 and running then
+
+        -- control
+        if btn(LEFT) then
+            r = r - 2.5
+        end
+        if btn(RIGHT) then
+            r = r + 2.5
+        end
+        if btn(UP) then
+            dx = dx + 0.025 * math.sin(math.rad(r))
+            dy = dy - 0.025 * math.cos(math.rad(r))
+        end
+
+    -- on the ground
+    else 
+
+        dx = 0
+        dy = 0
+
+        if btn(UP) then
+            dx = dx + 0.025 * math.sin(math.rad(r))
+            dy = dy - 0.025 * math.cos(math.rad(r))
+        end
+
+    end
+
+    -- physics
     y = y + dy
     x = x + dx
-
-    -- control
-    if btn(LEFT) then
-        r = r - 2.5
-    end
-    if btn(RIGHT) then
-        r = r + 2.5
-    end
-    if btn(UP) then
-        dx = dx + 0.025 * math.sin(math.rad(r))
-        dy = dy - 0.025 * math.cos(math.rad(r))
-    end
 
     -- wrap
     if x < -10 then
@@ -60,21 +94,31 @@ function _draw()
         line(star.x, star.y, star.x, star.y)
     end
 
+    -- draw planet
+    sprite(0, 106, 128, 22, 0, 106, 128, 22)
+
     -- log("x: " .. x .. ", y: " .. y .. ", r: " .. r .. ", dx: " .. dx .. ", dy: " .. dy)
     
     -- draw rocket
-    if(btn(UP)) then
+    if btn(UP) and running then
         if(millis() % 100 < 50) then
-            sprite(52, 23, 12, 26, x, y, 12, 26, r)
+            sprite(52, 23, 12, 26, x-6, y, 12, 26, r)
         else
-            sprite(66, 23, 12, 26, x, y, 12, 26, r)
+            sprite(66, 23, 12, 26, x-6, y, 12, 26, r)
         end
     else
-        sprite(80, 23, 12, 26, x, y, 12, 26, r)
+        sprite(80, 23, 12, 26, x-6, y, 12, 26, r)
     end
 
-    -- draw planet
-    sprite(0, 106, 128, 22, 0, 106, 128, 22)
+    -- collision with planet
+    if y >= 90 and (dy > 0.3 or math.abs(dx) > 0.3 or math.abs(r) > 18) then
+        running = false
+        log("game over")
+        sprite(97, 15, 23, 24, x-11, y, 23, 24)
+        cursor(64 - (10*4)/2, 60)
+        text(255,255,255,255)
+        print("game over")
+    end
 
     cursor(4, 114)
     fill(0, 0, 0, 200)
