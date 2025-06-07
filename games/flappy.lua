@@ -65,7 +65,7 @@ function _draw()
 		dy = -1.8
 		start = true
 		tone(F, 3, 1, SINE)
-		r = 30
+		r = -30
 	end
 
 	-- reset with Z button
@@ -80,7 +80,7 @@ function _draw()
 	if start then
 		dy = dy + 0.08
 		pipe_x = pipe_x - 0.4
-		r = r - 1.5
+		r = r + 1.5
 	end
 
 	-- clear previous screen
@@ -174,19 +174,4 @@ function _draw()
 		end
 	end
 
-end
-
-function _titlescreen()
-	for y = 0,128 do
-		for x = 0,128 do
-			fill(x*2, y*2, 255 - (x+y), 255)
-			pset(x, y)
-		end
-	end
-
-	sprite(sprite(101, 5, 17, 12, 64-((17*4)/2), 64-((12*4)/2), 17*4, 12*4))
-
-	cursor(30, 100)
-	fill(0,0,0,0)
-	print("Flappy Bird clone\n    by: Mees")
 end

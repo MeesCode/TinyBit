@@ -133,16 +133,16 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
         fclose(fp);
     }
 
-    int game_size = TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 2 + strlen(source);
-    int cartridge_size = TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT;
+    int script_size = strlen(source);
+    int cartridge_size = TB_MEM_SCRIPT_SIZE;
 
     // check if game would fit in cartridge
-    if (game_size > cartridge_size) {
+    if (script_size > cartridge_size) {
         printf("catridge too small to fit game\n");
         exit(EXIT_FAILURE);
     }
 
-    printf("game size: %d\ncartridge size: %d\npercentage used: %d%%\n", game_size, cartridge_size, (int)((float)game_size / (float)cartridge_size * 100.0));
+    printf("script size: %d\ncartridge size: %d\npercentage used: %d%%\n", script_size, cartridge_size, (int)((float)script_size / (float)cartridge_size * 100.0));
 
     // allocate image buffer
     uint8_t* buffer = (uint8_t*)malloc(TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT * 4);
