@@ -155,7 +155,7 @@ function _draw()
     end
 
     -- collision with planet or meteor
-    if (y >= 99 and (dy > 0.4 or math.abs(dx) > 0.4 or math.abs(r) > 20) or 
+    if (y >= 99 and (dy > 0.4 or math.abs(dx) > 0.4 or (r > 20 and r < 340)) or 
         (math.sqrt(math.abs(x-m_x)*math.abs(x-m_x) + math.abs(y-m_y)*math.abs(y-m_y)) < 17)) then
         running = false
         log("game over")
