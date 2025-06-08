@@ -214,9 +214,6 @@ int main(int argc, char* argv[]) {
 }
 
 void load_game(char* path) {
-
-    tinybit_init(&tb_mem, &bs);
-
     // feed cartridge file
     FILE* fp = fopen(path, "rb");
     if (!fp) {
@@ -233,11 +230,6 @@ void load_game(char* path) {
         }
     }
     fclose(fp);
-}
-
-void printb(uint8_t v) {
-    unsigned int i, s = 1 << ((sizeof(v) << 3) - 1); // s = only most significant bit at 1
-    for (i = s; i; i >>= 1) printf("%d", v & i || 0);
 }
 
 void export_cartridge(char* sprite, char* script, char* cover, char* path) {
