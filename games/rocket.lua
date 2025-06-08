@@ -15,6 +15,7 @@ m_y = 0
 m_dx = 0
 m_dy = 0
 running = true
+landing = false
 
 text(255,255,255,255)
 
@@ -32,13 +33,15 @@ function reset()
     dy = 0
     dx = 0
     r = 0
-    points = -1
+    points = 0
     m_x = -100
     m_y = -100
     m_dx = 0
     m_dy = 0
     running = true
     m_timer = millis()
+    landing = false
+    log("game reset")
 end
 
 reset()
@@ -63,10 +66,10 @@ function _draw()
 
         -- control
         if btn(LEFT) then
-            r = r - 2.5
+            r = (r - 2.5)
         end
         if btn(RIGHT) then
-            r = r + 2.5
+            r = (r + 2.5)
         end
         if btn(UP) then
             dx = dx + 0.025 * math.sin(math.rad(r))
@@ -76,6 +79,13 @@ function _draw()
     -- on the ground
     else 
 
+
+        if landing then
+            points = points + 1
+            landing = false
+            log("landing successful! points: " .. points)
+        end
+
         dx = 0
         dy = 0
 
@@ -84,6 +94,18 @@ function _draw()
             dy = dy - 0.025 * math.cos(math.rad(r))
         end
 
+    end
+
+    -- went up high enough to start landing
+    if y < 64 then
+        landing = true
+    end
+
+    -- points for flip
+    if math.abs(r) > 360 then
+        r = r % 360
+        points = points + 1
+        log("flip! points: " .. points)
     end
 
     -- physics
@@ -132,8 +154,8 @@ function _draw()
         sprite(80, 23, 12, 26, x-6, y-9, 12, 26, r)
     end
 
-    -- collision with planet
-    if (y >= 99 and (dy > 0.3 or math.abs(dx) > 0.3 or math.abs(r) > 18) or 
+    -- collision with planet or meteor
+    if (y >= 99 and (dy > 0.4 or math.abs(dx) > 0.4 or math.abs(r) > 20) or 
         (math.sqrt(math.abs(x-m_x)*math.abs(x-m_x) + math.abs(y-m_y)*math.abs(y-m_y)) < 17)) then
         running = false
         log("game over")
@@ -145,7 +167,7 @@ function _draw()
     -- draw points
     cursor(4, 122)
     stroke(255, 255, 255, 255, 255)
-    if points > 0 then
+    if points >= 0 then
         print("points:" .. points)
     end
 
@@ -160,8 +182,10 @@ function _draw()
         m_x = 64 - m_dx * 150
         m_y = 64 - m_dy * 150
         m_timer = millis()
-        log("meteor spawned at: " .. m_x .. ", " .. m_y)
-        points = points + 1
+        if millis() > 10000 then
+            points = points + 1
+            log("meteor avoided! points: " .. points)
+        end
     end
 
 end

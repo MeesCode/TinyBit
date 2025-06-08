@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <dirent.h>
 
 #include "tinybit/tinybit.h"
 
@@ -30,6 +31,70 @@ void print_usage() {
     printf("Usage: program [-c spritesheet.png script.lua cover.png file.tb.png] [file.tb.png]\n");
     printf("-c => compress a spritesheet and lua file into a cartridge file\n");
     printf("no flags => play a cartridge file\n");
+}
+
+int gamecover_count_cb() {
+    int count = 0;
+    DIR *dir = opendir("./games/");
+    if (dir == NULL) {
+        perror("opendir");
+        return 0;
+    }
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        const char *name = entry->d_name;
+        size_t len = strlen(name);
+        if (len >= 7 && strcmp(name + len - 7, ".tb.png") == 0) {
+            count++;
+        }
+    }
+    closedir(dir);
+    return count;
+}
+
+void gamecover_load_cb(int index){
+
+    uint8_t* buffer[2048];
+
+    // open directory
+    DIR *dir = opendir("./games/");
+    if (dir == NULL) {
+        perror("opendir");
+        return 0;
+    }
+
+    // find the file at the given index
+    struct dirent *entry;
+    int count = 0;
+    char filepath[256];
+    while ((entry = readdir(dir)) != NULL) {
+        const char *name = entry->d_name;
+        size_t len = strlen(name);
+        if (len >= 7 && strcmp(name + len - 7, ".tb.png") == 0) {
+            if (count == index) {
+                snprintf(filepath, sizeof(filepath), "./games/%s", name);
+                break;
+            }
+            count++;
+        }
+    }
+    closedir(dir);
+
+    printf("Loading game cover from: %s\n", filepath);
+
+    // load file
+    FILE *fp = fopen(filepath, "rb");
+    size_t bytes_read = 0;
+    while(1) {
+        size_t result = fread(buffer + bytes_read, 1, sizeof(buffer) - bytes_read, fp);
+        if (result < sizeof(buffer)) {
+            break; // EOF or error
+        }
+        tinybit_feed_cartridge(buffer, result);
+        bytes_read += result;
+    }
+
+    return 0; // not found
 }
 
 void surface_to_buffer(SDL_Surface* surface, uint8_t* buffer) {
@@ -86,19 +151,22 @@ int main(int argc, char* argv[]) {
 }
 
 void load_game(char* path) {
+
     tinybit_init(&tb_mem, &bs);
-    tinybit_set_log(printf);
-    FILE *fp = fopen(path, "rb");
+    tinybit_log_cb(printf);
+    tinybit_gamecount_cb(gamecover_count_cb);
+    tinybit_gamecover_cb(gamecover_load_cb);
 
     // Read the PNG file in chunks
-    uint8_t buf[1024];
-    size_t len;
-    while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
-        tinybit_feed_cartridge(buf, len);
-    }
+    // FILE *fp = fopen(path, "rb");
+    // uint8_t buf[1024];
+    // size_t len;
+    // while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
+    //     tinybit_feed_cartridge(buf, len);
+    // }
+    // fclose(fp);
 
-    fclose(fp);
-    tinybit_start();
+    tinybit_start_ui();
     play_game();
 }
 
