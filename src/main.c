@@ -12,7 +12,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <dirent.h>
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <dirent.h>
+#endif
 
 #include "tinybit/tinybit.h"
 
@@ -33,8 +37,18 @@ void print_usage() {
     printf("no flags => play a cartridge file\n");
 }
 
-int gamecover_count_cb() {
+int game_count_cb() {
     int count = 0;
+#ifdef _WIN32
+    WIN32_FIND_DATA findFileData;
+    HANDLE hFind = FindFirstFile("games\\*.tb.png", &findFileData);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            count++;
+        } while (FindNextFile(hFind, &findFileData) != 0);
+        FindClose(hFind);
+    }
+#else
     DIR *dir = opendir("./games/");
     if (dir == NULL) {
         perror("opendir");
@@ -49,52 +63,82 @@ int gamecover_count_cb() {
         }
     }
     closedir(dir);
+#endif
     return count;
 }
 
-void gamecover_load_cb(int index){
+void game_load_cb(int index){
 
-    uint8_t* buffer[2048];
+    uint8_t buffer[256];
+    char filepath[256] = {0}; // Initialize to empty string
 
+#ifdef _WIN32
+    WIN32_FIND_DATA findFileData;
+    HANDLE hFind = FindFirstFile("games\\*.tb.png", &findFileData);
+    if (hFind == INVALID_HANDLE_VALUE) {
+        return;
+    }
+    
+    int count = 0;
+    bool found = false;
+    do {
+        if (count == index) {
+            snprintf(filepath, sizeof(filepath), "games\\%s", findFileData.cFileName);
+            found = true;
+            break;
+        }
+        count++;
+    } while (FindNextFile(hFind, &findFileData) != 0);
+    FindClose(hFind);
+    
+    if (!found) {
+        return;
+    }
+#else
     // open directory
     DIR *dir = opendir("./games/");
     if (dir == NULL) {
         perror("opendir");
-        return 0;
+        return;
     }
 
     // find the file at the given index
     struct dirent *entry;
     int count = 0;
-    char filepath[256];
+    bool found = false;
     while ((entry = readdir(dir)) != NULL) {
         const char *name = entry->d_name;
         size_t len = strlen(name);
         if (len >= 7 && strcmp(name + len - 7, ".tb.png") == 0) {
             if (count == index) {
                 snprintf(filepath, sizeof(filepath), "./games/%s", name);
+                found = true;
                 break;
             }
             count++;
         }
     }
     closedir(dir);
+    
+    if (!found) {
+        printf("Game index %d not found\n", index);
+        return;
+    }
+#endif
 
     printf("Loading game cover from: %s\n", filepath);
 
     // load file
     FILE *fp = fopen(filepath, "rb");
-    size_t bytes_read = 0;
-    while(1) {
-        size_t result = fread(buffer + bytes_read, 1, sizeof(buffer) - bytes_read, fp);
-        if (result < sizeof(buffer)) {
-            break; // EOF or error
+    if (fp) {
+        size_t bytes_read;
+        while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
+            tinybit_feed_cartridge(buffer, bytes_read);
         }
-        tinybit_feed_cartridge(buffer, result);
-        bytes_read += result;
+        fclose(fp);
+    } else {
+        printf("Failed to open file: %s\n", filepath);
     }
-
-    return 0; // not found
 }
 
 void surface_to_buffer(SDL_Surface* surface, uint8_t* buffer) {
@@ -130,6 +174,11 @@ void buffer_to_surface(uint8_t* buffer, SDL_Surface* surface) {
 
 int main(int argc, char* argv[]) {
 
+#ifdef _WIN32
+    // Set working directory to where games folder should be
+    SetCurrentDirectory("C:\\Users\\mbrin\\source\\repos\\TinyBit");
+#endif
+
     if (argc < 2) {
         print_usage();
         exit(EXIT_FAILURE);
@@ -154,8 +203,8 @@ void load_game(char* path) {
 
     tinybit_init(&tb_mem, &bs);
     tinybit_log_cb(printf);
-    tinybit_gamecount_cb(gamecover_count_cb);
-    tinybit_gamecover_cb(gamecover_load_cb);
+    tinybit_gamecount_cb(game_count_cb);
+    tinybit_gameload_cb(game_load_cb);
 
     // Read the PNG file in chunks
     // FILE *fp = fopen(path, "rb");
