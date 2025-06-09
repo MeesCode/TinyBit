@@ -16,6 +16,8 @@ m_dx = 0
 m_dy = 0
 running = true
 landing = false
+flip_timer = 0
+landing_timer = 0
 
 text(255,255,255,255)
 
@@ -41,6 +43,8 @@ function reset()
     running = true
     m_timer = millis()
     landing = false
+    flip_timer = 0
+    landing_timer = 0
     log("game reset")
 end
 
@@ -66,10 +70,10 @@ function _draw()
 
         -- control
         if btn(LEFT) then
-            r = (r - 2.5)
+            r = (r - 3.5)
         end
         if btn(RIGHT) then
-            r = (r + 2.5)
+            r = (r + 3.5)
         end
         if btn(UP) then
             dx = dx + 0.025 * math.sin(math.rad(r))
@@ -84,6 +88,7 @@ function _draw()
             points = points + 1
             landing = false
             log("landing successful! points: " .. points)
+            landing_timer = millis()
         end
 
         dx = 0
@@ -96,6 +101,16 @@ function _draw()
 
     end
 
+    if flip_timer > 0 and millis() - flip_timer < 1000 then
+        cursor(x, y - 15)
+        print("flip!")
+    end
+
+    if landing_timer > 0 and millis() - landing_timer < 1000 then
+        cursor(x, y - 15)
+        print("landing!")
+    end
+
     -- went up high enough to start landing
     if y < 64 then
         landing = true
@@ -106,6 +121,7 @@ function _draw()
         r = r % 360
         points = points + 1
         log("flip! points: " .. points)
+        flip_timer = millis()
     end
 
     -- physics
