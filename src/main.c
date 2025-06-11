@@ -33,20 +33,40 @@ void load_game(char*);
 
 void print_usage() {
     printf("Usage: tinybit [] [-c spritesheet.png script.lua cover.png file.tb.png] [file.tb.png]\n");
-    printf("empty => start ui\n");
+    printf("empty => start game selector\n");
     printf("-c => compress a spritesheet and lua file into a cartridge file\n");
     printf("file => play a cartridge file\n");
 }
+
+void load_game(char* path) {
+    // feed cartridge file
+    FILE* fp = fopen(path, "rb");
+    if (!fp) {
+        printf("Failed to open cartridge file: %s\n", path);
+        exit(EXIT_FAILURE);
+    }
+    uint8_t buffer[256];
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
+        if (!tinybit_feed_cartridge(buffer, bytes_read)) {
+            printf("Error reading cartridge file: %s\n", path);
+            fclose(fp);
+            exit(EXIT_FAILURE);
+        }
+    }
+    fclose(fp);
+}
+
 
 int game_count_cb() {
     int count = 0;
 #ifdef _WIN32
     WIN32_FIND_DATA findFileData;
-    HANDLE hFind = FindFirstFile("games\\*.tb.png", &findFileData);
+    HANDLE hFind = FindFirstFileA("games\\*.tb.png", &findFileData);
     if (hFind != INVALID_HANDLE_VALUE) {
         do {
             count++;
-        } while (FindNextFile(hFind, &findFileData) != 0);
+        } while (FindNextFileA(hFind, &findFileData) != 0);
         FindClose(hFind);
     }
 #else
@@ -70,17 +90,16 @@ int game_count_cb() {
 
 void game_load_cb(int index){
 
-    uint8_t buffer[256];
     char filepath[256] = {0}; // Initialize to empty string
+    int count = 0;
 
 #ifdef _WIN32
     WIN32_FIND_DATA findFileData;
-    HANDLE hFind = FindFirstFile("games\\*.tb.png", &findFileData);
+    HANDLE hFind = FindFirstFileA("games\\*.tb.png", &findFileData);
     if (hFind == INVALID_HANDLE_VALUE) {
         return;
     }
     
-    int count = 0;
     bool found = false;
     do {
         if (count == index) {
@@ -89,7 +108,7 @@ void game_load_cb(int index){
             break;
         }
         count++;
-    } while (FindNextFile(hFind, &findFileData) != 0);
+    } while (FindNextFileA(hFind, &findFileData) != 0);
     FindClose(hFind);
     
     if (!found) {
@@ -105,7 +124,6 @@ void game_load_cb(int index){
 
     // find the file at the given index
     struct dirent *entry;
-    int count = 0;
     bool found = false;
     while ((entry = readdir(dir)) != NULL) {
         const char *name = entry->d_name;
@@ -128,16 +146,7 @@ void game_load_cb(int index){
 #endif
 
     // load file
-    FILE *fp = fopen(filepath, "rb");
-    if (fp) {
-        size_t bytes_read;
-        while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
-            tinybit_feed_cartridge(buffer, bytes_read);
-        }
-        fclose(fp);
-    } else {
-        printf("Failed to open file: %s\n", filepath);
-    }
+    load_game(filepath);
 }
 
 void surface_to_buffer(SDL_Surface* surface, uint8_t* buffer) {
@@ -173,17 +182,16 @@ void buffer_to_surface(uint8_t* buffer, SDL_Surface* surface) {
 
 int main(int argc, char* argv[]) {
 
+    // expose functions to load games
+    tinybit_log_cb(printf);
+    tinybit_gamecount_cb(game_count_cb);
+    tinybit_gameload_cb(game_load_cb);    
+
     // start game selector ui
     if(argc == 1) {
         tinybit_init(&tb_mem, &bs);
+        tinybit_start();
 
-        // expose functions to load games
-        tinybit_log_cb(printf);
-        tinybit_gamecount_cb(game_count_cb);
-        tinybit_gameload_cb(game_load_cb);
-
-        // start the game selector
-        tinybit_start_ui();
         play_game();
     }
 
@@ -191,11 +199,12 @@ int main(int argc, char* argv[]) {
     else if (argc == 2) {
         tinybit_init(&tb_mem, &bs);
 
+        printf("Loading game: %s\n", argv[1]);
+
         // load game into memory
         load_game(argv[1]); 
+        tinybit_start();
 
-        // start the game
-        tinybit_start_game();
         play_game();
     }
 
@@ -211,25 +220,6 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
-}
-
-void load_game(char* path) {
-    // feed cartridge file
-    FILE* fp = fopen(path, "rb");
-    if (!fp) {
-        printf("Failed to open cartridge file: %s\n", path);
-        exit(EXIT_FAILURE);
-    }
-    uint8_t buffer[256];
-    size_t bytes_read;
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
-        if (!tinybit_feed_cartridge(buffer, bytes_read)) {
-            printf("Error reading cartridge file: %s\n", path);
-            fclose(fp);
-            exit(EXIT_FAILURE);
-        }
-    }
-    fclose(fp);
 }
 
 void export_cartridge(char* sprite, char* script, char* cover, char* path) {

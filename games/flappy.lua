@@ -31,8 +31,6 @@ num_spr = {
 
 points = 0
 
-log("Flappy Bird clone by Mees")
-
 -- reset the game to the initial state
 function reset()
 	y = 64
