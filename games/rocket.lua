@@ -54,7 +54,7 @@ fill(0, 0, 0, 150)
 function _draw()
 
     if not running then
-        if btnp(UP) then
+        if btnp(UP) or btnp(A) then
             reset()
         end
         return
@@ -75,7 +75,7 @@ function _draw()
         if btn(RIGHT) then
             r = (r + 3.5)
         end
-        if btn(UP) then
+        if btn(UP) or btn(A) then
             dx = dx + 0.025 * math.sin(math.rad(r))
             dy = dy - 0.025 * math.cos(math.rad(r))
         end
@@ -94,7 +94,7 @@ function _draw()
         dx = 0
         dy = 0
 
-        if btn(UP) then
+        if btn(UP) or btn(A) then
             dx = dx + 0.025 * math.sin(math.rad(r))
             dy = dy - 0.025 * math.cos(math.rad(r))
         end
@@ -160,7 +160,7 @@ function _draw()
     -- log("x: " .. x .. ", y: " .. y .. ", r: " .. r .. ", dx: " .. dx .. ", dy: " .. dy)
     
     -- draw rocket
-    if btn(UP) and running then
+    if (btn(UP) or btn(A)) and running then
         if(millis() % 100 < 50) then
             sprite(52, 23, 12, 26, x-6, y-9, 12, 26, r)
         else

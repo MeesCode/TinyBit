@@ -15,6 +15,8 @@ pipe_h_dist = 70
 pipe_x = 90
 pipes = {}
 
+log("Flappy Bird clone started")
+
 -- number sprites
 num_spr = {
 	[1] = {x = 2, w = 5},
@@ -67,7 +69,7 @@ function _draw()
 	end
 
 	-- reset with Z button
-	if btnp(Z) then
+	if btnp(A) then
 		reset()
 	end
 
