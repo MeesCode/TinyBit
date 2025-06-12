@@ -290,7 +290,7 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
     // add cover image to cartridge buffer
     for (int y = 0; y < TB_SCREEN_HEIGHT; ++y) {
         for (int x = 0; x < TB_SCREEN_WIDTH; ++x) {
-            uint32_t* target_pixel = (uint32_t*)(buffer + ((y+34) * TB_CARTRIDGE_WIDTH + (x+35)) * 4);
+            uint32_t* target_pixel = (uint32_t*)(buffer + ((y+TB_COVER_Y) * TB_CARTRIDGE_WIDTH + (x+TB_COVER_X)) * 4);
             uint8_t r = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4];
             uint8_t g = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4 + 1];
             uint8_t b = coverbuffer[(y * TB_SCREEN_WIDTH + x) * 4 + 2];
