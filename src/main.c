@@ -57,6 +57,88 @@ void load_game(char* path) {
     fclose(fp);
 }
 
+void input_func() {
+
+    SDL_Event event;
+    while (SDL_PollEvent(&event));
+    const char* state = (const char*)SDL_GetKeyboardState(NULL);
+
+    // quit if ESC is pressed or window is closed
+    if(event.type == SDL_QUIT || state[(SDL_Scancode) SDL_SCANCODE_ESCAPE] == 1) {
+        tinybit_quit();
+            return;
+    }
+
+    // get button input
+    if(state[(SDL_Scancode) SDL_SCANCODE_UP] == 1) {
+        bs |= (1 << TB_BUTTON_UP);
+    } else {
+        bs &= ~(1 << TB_BUTTON_UP);
+    }
+    if(state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1) {
+        bs |= (1 << TB_BUTTON_DOWN);
+    } else {
+        bs &= ~(1 << TB_BUTTON_DOWN);
+    }
+    if(state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1) {
+        bs |= (1 << TB_BUTTON_LEFT);
+    } else {
+        bs &= ~(1 << TB_BUTTON_LEFT);
+    }
+    if(state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1) {
+        bs |= (1 << TB_BUTTON_RIGHT);
+    } else {
+        bs &= ~(1 << TB_BUTTON_RIGHT);
+    }
+    if(state[(SDL_Scancode) SDL_SCANCODE_A] == 1) {
+        bs |= (1 << TB_BUTTON_A);
+    } else {
+        bs &= ~(1 << TB_BUTTON_A);
+    }
+    if(state[(SDL_Scancode) SDL_SCANCODE_B] == 1) {
+        bs |= (1 << TB_BUTTON_B);
+    } else {
+        bs &= ~(1 << TB_BUTTON_B);
+    }
+}
+
+void frame_func() {
+
+    // execute draw function
+    // (no need to check millis/frame_timer here, just run every loop)
+    // set and clear intermediate render target
+    SDL_SetRenderTarget(renderer, render_target);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+
+    // quit if ESC is pressed
+    // if(state[(SDL_Scancode) SDL_SCANCODE_ESCAPE] == 1) {
+    //     return;
+    // }
+
+    // map display section to render target
+    uint32_t* pixels;
+    int pitch;
+    SDL_LockTexture(render_target, NULL, (void**)&pixels, &pitch);
+
+    for (int y = 0; y < 128; ++y) {
+        for (int x = 0; x < 128; ++x) {
+            uint8_t r = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
+            uint8_t g = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
+            uint8_t b = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
+            uint8_t a = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
+
+            pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
+        }
+    }
+
+    SDL_UnlockTexture(render_target);
+
+    // redraw window
+    SDL_SetRenderTarget(renderer, NULL);
+    SDL_RenderCopy(renderer, render_target, NULL, NULL);
+    SDL_RenderPresent(renderer);
+}
 
 int game_count_cb() {
     int count = 0;
@@ -186,6 +268,9 @@ int main(int argc, char* argv[]) {
     tinybit_log_cb(printf);
     tinybit_gamecount_cb(game_count_cb);
     tinybit_gameload_cb(game_load_cb);    
+    tinybit_frame_cb(frame_func);
+    tinybit_input_cb(input_func);
+    tinybit_sleep_cb(SDL_Delay);
 
     // start game selector ui
     if(argc == 1) {
@@ -372,98 +457,9 @@ void play_game() {
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetTextureBlendMode(render_target, SDL_BLENDMODE_BLEND);
+
+    tinybit_loop();
     
-    bool running = true;
-    SDL_Event event;
-
-    while (running) {
-        uint32_t frame_start = SDL_GetTicks();
-
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = false;
-            }
-        }
-
-        // execute draw function
-        // (no need to check millis/frame_timer here, just run every loop)
-        // set and clear intermediate render target
-        SDL_SetRenderTarget(renderer, render_target);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-        SDL_RenderClear(renderer);
-
-        // get button input
-        const char* state = (const char*)SDL_GetKeyboardState(NULL);
-        if(state[(SDL_Scancode) SDL_SCANCODE_UP] == 1) {
-            bs |= (1 << TB_BUTTON_UP);
-        } else {
-            bs &= ~(1 << TB_BUTTON_UP);
-        }
-        if(state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1) {
-            bs |= (1 << TB_BUTTON_DOWN);
-        } else {
-            bs &= ~(1 << TB_BUTTON_DOWN);
-        }
-        if(state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1) {
-            bs |= (1 << TB_BUTTON_LEFT);
-        } else {
-            bs &= ~(1 << TB_BUTTON_LEFT);
-        }
-        if(state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1) {
-            bs |= (1 << TB_BUTTON_RIGHT);
-        } else {
-            bs &= ~(1 << TB_BUTTON_RIGHT);
-        }
-        if(state[(SDL_Scancode) SDL_SCANCODE_A] == 1) {
-            bs |= (1 << TB_BUTTON_A);
-        } else {
-            bs &= ~(1 << TB_BUTTON_A);
-        }
-        if(state[(SDL_Scancode) SDL_SCANCODE_B] == 1) {
-            bs |= (1 << TB_BUTTON_B);
-        } else {
-            bs &= ~(1 << TB_BUTTON_B);
-        }
-
-        // quit if ESC is pressed
-        if(state[(SDL_Scancode) SDL_SCANCODE_ESCAPE] == 1) {
-            return;
-        }
-
-        if (!tinybit_frame()) {
-            printf("script failed");
-        }
-
-        // map display section to render target
-        uint32_t* pixels;
-        int pitch;
-        SDL_LockTexture(render_target, NULL, (void**)&pixels, &pitch);
-
-        for (int y = 0; y < 128; ++y) {
-            for (int x = 0; x < 128; ++x) {
-                uint8_t r = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
-                uint8_t g = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
-                uint8_t b = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
-                uint8_t a = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
-
-                pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
-            }
-        }
-
-        SDL_UnlockTexture(render_target);
-
-        // redraw window
-        SDL_SetRenderTarget(renderer, NULL);
-        SDL_RenderCopy(renderer, render_target, NULL, NULL);
-        SDL_RenderPresent(renderer);
-
-        // --- FPS limiting ---
-        uint32_t frame_time = SDL_GetTicks() - frame_start;
-        if (frame_time < 16) {
-            SDL_Delay(16 - frame_time);
-        }
-    }
-
     SDL_DestroyTexture(render_target);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -471,3 +467,4 @@ void play_game() {
     //SDL_CloseAudioDevice(audio_device);
     SDL_Quit();
 }
+
