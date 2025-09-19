@@ -21,16 +21,29 @@
 #include "tinybit/tinybit.h"
 
 struct TinyBitMemory tb_mem = {0};
-uint8_t bs = 0;
+bool button_state[TB_BUTTON_COUNT] = {0};
 
 SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Texture* render_target;
 
+#ifdef _POSIX_C_SOURCE
+static struct timespec start_time = { 0, 0 };
+#else
+static clock_t start_time = 0;
+#endif
+
 void play_game();
 void export_cartridge(char*,char*,char*,char*);
 void load_game(char*);
 
+void handle_input();
+void render_frame();
+long get_ticks_ms();
+int count_games();
+void load_game_by_index(int index);
+
+// Print usage information for the TinyBit emulator
 void print_usage() {
     printf("Usage: tinybit [] [-c spritesheet.png script.lua cover.png file.tb.png] [file.tb.png]\n");
     printf("empty => start game selector\n");
@@ -38,6 +51,7 @@ void print_usage() {
     printf("file => play a cartridge file\n");
 }
 
+// Load a game cartridge file into TinyBit memory
 void load_game(char* path) {
     // feed cartridge file
     FILE* fp = fopen(path, "rb");
@@ -57,7 +71,8 @@ void load_game(char* path) {
     fclose(fp);
 }
 
-void input_func() {
+// Handle SDL input events and map keyboard input to TinyBit buttons
+void handle_input() {
 
     SDL_Event event;
     while (SDL_PollEvent(&event));
@@ -70,39 +85,18 @@ void input_func() {
     }
 
     // get button input
-    if(state[(SDL_Scancode) SDL_SCANCODE_UP] == 1) {
-        bs |= (1 << TB_BUTTON_UP);
-    } else {
-        bs &= ~(1 << TB_BUTTON_UP);
-    }
-    if(state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1) {
-        bs |= (1 << TB_BUTTON_DOWN);
-    } else {
-        bs &= ~(1 << TB_BUTTON_DOWN);
-    }
-    if(state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1) {
-        bs |= (1 << TB_BUTTON_LEFT);
-    } else {
-        bs &= ~(1 << TB_BUTTON_LEFT);
-    }
-    if(state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1) {
-        bs |= (1 << TB_BUTTON_RIGHT);
-    } else {
-        bs &= ~(1 << TB_BUTTON_RIGHT);
-    }
-    if(state[(SDL_Scancode) SDL_SCANCODE_A] == 1) {
-        bs |= (1 << TB_BUTTON_A);
-    } else {
-        bs &= ~(1 << TB_BUTTON_A);
-    }
-    if(state[(SDL_Scancode) SDL_SCANCODE_B] == 1) {
-        bs |= (1 << TB_BUTTON_B);
-    } else {
-        bs &= ~(1 << TB_BUTTON_B);
-    }
+    button_state[TB_BUTTON_A] = (state[(SDL_Scancode) SDL_SCANCODE_A] == 1);
+    button_state[TB_BUTTON_B] = (state[(SDL_Scancode) SDL_SCANCODE_B] == 1);
+    button_state[TB_BUTTON_UP] = (state[(SDL_Scancode) SDL_SCANCODE_UP] == 1);
+    button_state[TB_BUTTON_DOWN] = (state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1);
+    button_state[TB_BUTTON_LEFT] = (state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1);
+    button_state[TB_BUTTON_RIGHT] = (state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1);
+    button_state[TB_BUTTON_START] = (state[(SDL_Scancode) SDL_SCANCODE_RETURN] == 1);
+    button_state[TB_BUTTON_SELECT] = (state[(SDL_Scancode) SDL_SCANCODE_BACKSPACE] == 1);
 }
 
-void frame_func() {
+// Render the TinyBit display buffer to SDL texture and present to screen
+void render_frame() {
 
     // execute draw function
     // (no need to check millis/frame_timer here, just run every loop)
@@ -111,11 +105,6 @@ void frame_func() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
 
-    // quit if ESC is pressed
-    // if(state[(SDL_Scancode) SDL_SCANCODE_ESCAPE] == 1) {
-    //     return;
-    // }
-
     // map display section to render target
     uint32_t* pixels;
     int pitch;
@@ -123,10 +112,10 @@ void frame_func() {
 
     for (int y = 0; y < 128; ++y) {
         for (int x = 0; x < 128; ++x) {
-            uint8_t r = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
-            uint8_t g = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
-            uint8_t b = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
-            uint8_t a = (tinybit_memory->display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
+            uint8_t r = (tb_mem.display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
+            uint8_t g = (tb_mem.display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
+            uint8_t b = (tb_mem.display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
+            uint8_t a = (tb_mem.display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
 
             pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
         }
@@ -140,7 +129,35 @@ void frame_func() {
     SDL_RenderPresent(renderer);
 }
 
-int game_count_cb() {
+// Get elapsed time in milliseconds since program start
+long get_ticks_ms() {
+    #ifdef _POSIX_C_SOURCE
+        struct timespec current_time;
+        clock_gettime(CLOCK_MONOTONIC, &current_time);
+
+        if (start_time.tv_sec == 0 && start_time.tv_nsec == 0) {
+            start_time = current_time;
+            return 0;
+        }
+
+        long elapsed_sec = current_time.tv_sec - start_time.tv_sec;
+        long elapsed_nsec = current_time.tv_nsec - start_time.tv_nsec;
+
+        return (elapsed_sec * 1000) + (elapsed_nsec / 1000000);
+    #else
+        clock_t current_time = clock();
+        
+        if (start_time == 0) {
+            start_time = current_time;
+            return 0;
+        }
+        
+        return (current_time - start_time) * 1000 / CLOCKS_PER_SEC;
+    #endif
+}
+
+// Count the number of available game cartridge files in the games directory
+int count_games() {
     int count = 0;
 #ifdef _WIN32
     WIN32_FIND_DATA findFileData;
@@ -170,7 +187,8 @@ int game_count_cb() {
     return count;
 }
 
-void game_load_cb(int index){
+// Load a game cartridge by index from the games directory
+void load_game_by_index(int index){
 
     char filepath[256] = {0}; // Initialize to empty string
     int count = 0;
@@ -231,6 +249,7 @@ void game_load_cb(int index){
     load_game(filepath);
 }
 
+// Convert SDL surface pixel data to raw RGBA buffer
 void surface_to_buffer(SDL_Surface* surface, uint8_t* buffer) {
     SDL_LockSurface(surface);
     for (int i = 0; i < surface->w * surface->h; i++) {
@@ -247,6 +266,7 @@ void surface_to_buffer(SDL_Surface* surface, uint8_t* buffer) {
     SDL_UnlockSurface(surface);
 }
 
+// Convert raw RGBA buffer to SDL surface pixel data
 void buffer_to_surface(uint8_t* buffer, SDL_Surface* surface) {
     SDL_LockSurface(surface);
     for (int y = 0; y < surface->h; ++y) {
@@ -266,15 +286,16 @@ int main(int argc, char* argv[]) {
 
     // expose functions to load games
     tinybit_log_cb(printf);
-    tinybit_gamecount_cb(game_count_cb);
-    tinybit_gameload_cb(game_load_cb);    
-    tinybit_frame_cb(frame_func);
-    tinybit_input_cb(input_func);
+    tinybit_gamecount_cb(count_games);
+    tinybit_gameload_cb(load_game_by_index);    
+    tinybit_render_cb(render_frame);
+    tinybit_poll_input_cb(handle_input);
     tinybit_sleep_cb(SDL_Delay);
+    tinybit_get_ticks_ms_cb(get_ticks_ms);
 
     // start game selector ui
     if(argc == 1) {
-        tinybit_init(&tb_mem, &bs);
+        tinybit_init(&tb_mem, &button_state);
         tinybit_start();
 
         play_game();
@@ -282,7 +303,7 @@ int main(int argc, char* argv[]) {
 
     // load game from file
     else if (argc == 2) {
-        tinybit_init(&tb_mem, &bs);
+        tinybit_init(&tb_mem, &button_state);
 
         printf("Loading game: %s\n", argv[1]);
 
@@ -307,6 +328,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+// Export spritesheet, script, and cover image into a single cartridge file
 void export_cartridge(char* sprite, char* script, char* cover, char* path) {
 
     // load lua file
@@ -450,6 +472,7 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
     return;
 }
 
+// Initialize SDL window and renderer, then start the main TinyBit game loop
 void play_game() {
     window = SDL_CreateWindow("TinyBit Virtual Console", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
