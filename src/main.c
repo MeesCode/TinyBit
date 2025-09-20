@@ -81,7 +81,7 @@ void handle_input() {
     // quit if ESC is pressed or window is closed
     if(event.type == SDL_QUIT || state[(SDL_Scancode) SDL_SCANCODE_ESCAPE] == 1) {
         tinybit_quit();
-            return;
+        return;
     }
 
     // get button input
@@ -99,7 +99,6 @@ void handle_input() {
 void render_frame() {
 
     // execute draw function
-    // (no need to check millis/frame_timer here, just run every loop)
     // set and clear intermediate render target
     SDL_SetRenderTarget(renderer, render_target);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
@@ -295,7 +294,7 @@ int main(int argc, char* argv[]) {
 
     // start game selector ui
     if(argc == 1) {
-        tinybit_init(&tb_mem, &button_state);
+        tinybit_init(&tb_mem, button_state);
         tinybit_start();
 
         play_game();
@@ -303,7 +302,7 @@ int main(int argc, char* argv[]) {
 
     // load game from file
     else if (argc == 2) {
-        tinybit_init(&tb_mem, &button_state);
+        tinybit_init(&tb_mem, button_state);
 
         printf("Loading game: %s\n", argv[1]);
 
