@@ -141,8 +141,8 @@ void audio_init() {
 
     SDL_memset(&desired, 0, sizeof(desired));
     desired.freq = TB_AUDIO_SAMPLE_RATE;
-    desired.format = AUDIO_S16LSB;
-    desired.channels = TB_AUDIO_CHANNELS;
+    desired.format = AUDIO_S8;
+    desired.channels = 1;
     desired.samples = TB_AUDIO_FRAME_SAMPLES;
     desired.callback = NULL;  // Use SDL_QueueAudio instead of callback
 
@@ -152,7 +152,8 @@ void audio_init() {
         return;
     }
 
-    // Start audio playback
+    // Clear any queued audio and start playback
+    SDL_ClearQueuedAudio(audio_device);
     SDL_PauseAudioDevice(audio_device, 0);
 }
 
@@ -171,8 +172,20 @@ void audio_queue_frame() {
         return;  // Audio device not initialized
     }
 
+    // Check how much audio is already queued
+    Uint32 queued = SDL_GetQueuedAudioSize(audio_device);
+
+    // Only queue if buffer is getting low (less than 2 frames worth)
+    // This keeps latency around 16-32ms while avoiding underruns
+    if (queued > TB_AUDIO_FRAME_SAMPLES * 2) {
+        //printf("Audio queue has %u bytes, skipping queue\n", queued);
+        return;  // Queue has enough data, skip to reduce latency
+    }
+
+    // printf("Queued audio size: %u bytes, %ums\n", queued, (queued * 1000) / (TB_AUDIO_SAMPLE_RATE));
+
     // Queue the frame's audio data from tinybit's buffer
-    if (SDL_QueueAudio(audio_device, tinybit_audio_buffer, TB_AUDIO_FRAME_SIZE) != 0) {
+    if (SDL_QueueAudio(audio_device, tinybit_audio_buffer, TB_AUDIO_FRAME_SAMPLES) != 0) {
         printf("Failed to queue audio: %s\n", SDL_GetError());
     }
 }
