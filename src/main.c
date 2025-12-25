@@ -27,6 +27,10 @@ SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Texture* render_target;
 
+// Audio state
+static SDL_AudioDeviceID audio_device = 0;
+static int16_t audio_buffer[TB_AUDIO_FRAME_SAMPLES] = {0};
+
 #ifdef _POSIX_C_SOURCE
 static struct timespec start_time = { 0, 0 };
 #else
@@ -42,6 +46,9 @@ void render_frame();
 long get_ticks_ms();
 int count_games();
 void load_game_by_index(int index);
+void audio_init();
+void audio_cleanup();
+void audio_queue_frame();
 
 // Print usage information for the TinyBit emulator
 void print_usage() {
@@ -126,6 +133,48 @@ void render_frame() {
     SDL_SetRenderTarget(renderer, NULL);
     SDL_RenderCopy(renderer, render_target, NULL, NULL);
     SDL_RenderPresent(renderer);
+}
+
+// Initialize SDL audio subsystem and open audio device
+void audio_init() {
+    SDL_AudioSpec desired, obtained;
+
+    SDL_memset(&desired, 0, sizeof(desired));
+    desired.freq = TB_AUDIO_SAMPLE_RATE;
+    desired.format = AUDIO_S16LSB;
+    desired.channels = TB_AUDIO_CHANNELS;
+    desired.samples = TB_AUDIO_FRAME_SAMPLES;
+    desired.callback = NULL;  // Use SDL_QueueAudio instead of callback
+
+    audio_device = SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0);
+    if (audio_device == 0) {
+        printf("Failed to open audio device: %s\n", SDL_GetError());
+        return;
+    }
+
+    // Start audio playback
+    SDL_PauseAudioDevice(audio_device, 0);
+}
+
+// Clean up audio resources
+void audio_cleanup() {
+    if (audio_device != 0) {
+        SDL_CloseAudioDevice(audio_device);
+        audio_device = 0;
+    }
+}
+
+// Queue audio data for the next frame - call this each frame for seamless playback
+// Copies the tinybit_audio_buffer (filled by game logic) to SDL's audio queue
+void audio_queue_frame() {
+    if (audio_device == 0) {
+        return;  // Audio device not initialized
+    }
+
+    // Queue the frame's audio data from tinybit's buffer
+    if (SDL_QueueAudio(audio_device, tinybit_audio_buffer, TB_AUDIO_FRAME_SIZE) != 0) {
+        printf("Failed to queue audio: %s\n", SDL_GetError());
+    }
 }
 
 // Get elapsed time in milliseconds since program start
@@ -286,15 +335,16 @@ int main(int argc, char* argv[]) {
     // expose functions to load games
     tinybit_log_cb(printf);
     tinybit_gamecount_cb(count_games);
-    tinybit_gameload_cb(load_game_by_index);    
+    tinybit_gameload_cb(load_game_by_index);
     tinybit_render_cb(render_frame);
     tinybit_poll_input_cb(handle_input);
     tinybit_sleep_cb(SDL_Delay);
     tinybit_get_ticks_ms_cb(get_ticks_ms);
+    tinybit_audio_queue_cb(audio_queue_frame);
 
     // start game selector ui
     if(argc == 1) {
-        tinybit_init(&tb_mem, button_state);
+        tinybit_init(&tb_mem, button_state, audio_buffer);
         tinybit_start();
 
         play_game();
@@ -302,7 +352,7 @@ int main(int argc, char* argv[]) {
 
     // load game from file
     else if (argc == 2) {
-        tinybit_init(&tb_mem, button_state);
+        tinybit_init(&tb_mem, button_state, audio_buffer);
 
         printf("Loading game: %s\n", argv[1]);
 
@@ -473,6 +523,12 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
 
 // Initialize SDL window and renderer, then start the main TinyBit game loop
 void play_game() {
+    // Initialize SDL with video and audio subsystems
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+        printf("Failed to initialize SDL: %s\n", SDL_GetError());
+        return;
+    }
+
     window = SDL_CreateWindow("TinyBit Virtual Console", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
     render_target = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 128, 128);
@@ -480,13 +536,16 @@ void play_game() {
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetTextureBlendMode(render_target, SDL_BLENDMODE_BLEND);
 
+    // Initialize audio subsystem
+    audio_init();
+
     tinybit_loop();
-    
+
     SDL_DestroyTexture(render_target);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     IMG_Quit();
-    //SDL_CloseAudioDevice(audio_device);
+    audio_cleanup();
     SDL_Quit();
 }
 
