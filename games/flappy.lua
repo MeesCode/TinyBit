@@ -17,6 +17,29 @@ pipes = {}
 
 log("Flappy Bird clone started")
 
+tune = [[
+	L:1/8
+	Q:1/4=105
+	K:G
+	V:1
+	[e/2c/2][ce][ec][c/2A/2][ce] g/2z3z/2 |: c/2zG/2 zE/2zAB^A/2=A | (3Geg a=f/2gec/2 d/2B/2z :|
+	V:2
+	E4 G4 |: C4 z4 | G4 D4 :| 
+	V:1
+	zg/2^f/2 =f/2^de^G/2A/2cA/2c/2=d/2 | zg/2^f/2 =f/2^dec'c'/2 c'/2z3/2 zg/2^f/2 =f/2^de^G/2A/2cA/2c/2=d/2 |
+	V:2
+	z G3 E4 | z G3 c4 | z G3 E4 | 
+	V:1
+	z^d/2z=d/2z c/2z3z/2 |]
+	V:2
+	z ^D3 C/z3z/2 |]
+]]
+
+point_sfx = "c/4d/4e/4g/4"
+flap_sfx = "d/4"
+
+music(tune)
+
 -- number sprites
 num_spr = {
 	[1] = {x = 2, w = 5},
@@ -64,8 +87,8 @@ function _draw()
 	if btnp(UP) then
 		dy = -1.8
 		start = true
-		tone(F, 3, 1, SINE)
 		r = -30
+		sfx(flap_sfx)
 	end
 
 	-- reset with Z button
@@ -131,7 +154,6 @@ function _draw()
 	if overlap(20, y, 17, 12, pipe_x//1, pipes[1] - pipe_v_dist - 60, 26, 73) or
 	   overlap(20, y, 17, 12, pipe_x//1, pipes[1] + pipe_v_dist, 26, 73) or 
 	   y <= 0 or y >= 128 then
-		noise(1)
 		reset()
 	end
 
@@ -142,7 +164,7 @@ function _draw()
 		pipes[2] = pipes[3]
 		pipes[3] = random(30, 85)
 		points = points + 1
-		tone(F, 4, 1, SINE)
+		sfx(point_sfx)
 		log(points)
 	end
 

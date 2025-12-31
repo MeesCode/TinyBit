@@ -10,6 +10,7 @@ LDFLAGS = $(SDL_LDFLAGS) -lm -lSDL2 -lSDL2_image
 # Directories
 SRCDIR = src
 LUADIR = src/tinybit/lua
+ABCDIR = src/tinybit/ABC-parser
 TBDIR = src/tinybit
 PNGDIR = src/tinybit/pngle
 INCDIR = include
@@ -29,10 +30,13 @@ SRC_FILES = $(wildcard $(SRCDIR)/*.c)
 LUA_FILES = $(wildcard $(LUADIR)/*.c)
 TB_FILES = $(wildcard $(TBDIR)/*.c)
 PNG_FILES = $(wildcard $(PNGDIR)/*.c)
+# Exclude test files from ABC-parser (main.c and test_parser.c are standalone test programs)
+ABC_FILES = $(filter-out $(ABCDIR)/main.c $(ABCDIR)/test_parser.c, $(wildcard $(ABCDIR)/*.c))
 
 # Object files
 OBJECTS = $(SRC_FILES:$(SRCDIR)/%.c=$(BINDIR)/%.o) $(LUA_FILES:$(LUADIR)/%.c=$(BINDIR)/%.o) \
-		   $(TB_FILES:$(TBDIR)/%.c=$(BINDIR)/%.o) $(PNG_FILES:$(PNGDIR)/%.c=$(BINDIR)/%.o)
+		   $(TB_FILES:$(TBDIR)/%.c=$(BINDIR)/%.o) $(PNG_FILES:$(PNGDIR)/%.c=$(BINDIR)/%.o) \
+		   $(ABC_FILES:$(ABCDIR)/%.c=$(BINDIR)/%.o)
 
 # Default target
 all: $(TARGET) copy-assets
@@ -57,6 +61,11 @@ $(BINDIR)/%.o: $(TBDIR)/%.c
 	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Rule to build object files from ABC-parser
+$(BINDIR)/%.o: $(ABCDIR)/%.c
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # Rule to build object files from pngle
 $(BINDIR)/%.o: $(PNGDIR)/%.c
 	@mkdir -p $(BINDIR)
@@ -78,5 +87,11 @@ install: all
 clean:
 	rm -rf $(BINDIR)
 
+# Debug target to print variables
+debug:
+	@echo "SRC_FILES: $(SRC_FILES)"
+	@echo "TB_FILES: $(TB_FILES)"
+	@echo "OBJECTS: $(OBJECTS)"
+
 # Phony targets
-.PHONY: all clean copy-assets install
+.PHONY: all clean copy-assets install debug
