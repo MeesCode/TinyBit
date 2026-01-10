@@ -18,21 +18,34 @@ pipes = {}
 log("Flappy Bird clone started")
 
 tune = [[
-	L:1/8
-	Q:1/4=105
-	K:G
-	V:1
-	[e/2c/2][ce][ec][c/2A/2][ce] g/2z3z/2 |: c/2zG/2 zE/2zAB^A/2=A | (3Geg a=f/2gec/2 d/2B/2z :|
-	V:2
-	E4 G4 |: C4 z4 | G4 D4 :| 
-	V:1
-	zg/2^f/2 =f/2^de^G/2A/2cA/2c/2=d/2 | zg/2^f/2 =f/2^dec'c'/2 c'/2z3/2 zg/2^f/2 =f/2^de^G/2A/2cA/2c/2=d/2 |
-	V:2
-	z G3 E4 | z G3 c4 | z G3 E4 | 
-	V:1
-	z^d/2z=d/2z c/2z3z/2 |]
-	V:2
-	z ^D3 C/z3z/2 |]
+X:1
+T:Super Mario Bros
+L:1/4
+Q:1/4=100
+M:4/4
+K:C
+V:1
+e/4 e/ e/4 z/4 c/4 e/ g G | c/ z/4 G/4 z/ E/ z/4 A/4 z/4 B/4 z/4 _B/4 A/ | (3G/ e/ g/ a/ f/4 g/4 z/4 e/4 z/4 c/4 d/4 B/4 z/ | c/ z/4 G/4 z/ E/ z/4 A/4 z/4 B/4 z/4 _B/4 A/ |
+(3G/ e/ g/ a/ f/4 g/4 z/4 e/4 z/4 c/4 d/4 B/4 z/ | z/ g/4 _g/4 f/4 _e/ =e/4 z/4 _A/4 =A/4 c/4 z/4 A/4 c/4 d/4 | z/ g/4 _g/4 f/4 _e/ =e/4 z/4 c'/4 z/4 c'/4 c' | z/ g/4 _g/4 f/4 _e/ =e/4 z/4 _A/4 =A/4 c/4 z/4 A/4 c/4 d/4 |
+z/ _e/ z/4 d/4 z/ c z | z/ g/4 _g/4 f/4 _e/ =e/4 z/4 _A/4 =A/4 c/4 z/4 A/4 c/4 d/4 | z/ g/4 _g/4 f/4 _e/ =e/4 z/4 c'/4 z/4 c'/4 c' | z/ g/4 _g/4 f/4 _e/ =e/4 z/4 _A/4 =A/4 c/4 z/4 A/4 c/4 d/4 |
+z/ _e/ z/4 d/4 z/ c z | c/4 c/ c/4 z/4 c/4 d/ e/4 c/ A/4 G | c/4 c/ c/4 z/4 c/4 d/4 e/4 z2 | c/4 c/ c/4 z/4 c/4 d/ e/4 c/ A/4 G |
+e/4 e/ e/4 z/4 c/4 e/ g G | c/ z/4 G/4 z/ E/ z/4 A/4 z/4 B/4 z/4 _B/4 A/ | (3G/ e/ g/ a/ f/4 g/4 z/4 e/4 z/4 c/4 d/4 B/4 z/ | c/ z/4 G/4 z/ E/ z/4 A/4 z/4 B/4 z/4 _B/4 A/ |
+(3G/ e/ g/ a/ f/4 g/4 z/4 e/4 z/4 c/4 d/4 B/4 z/ | e/4 c/ G/4 z/ ^G/ A/4 f/ f/4 A | (3B/ a/ a/ (3a/ g/ f/ e/4 c/ A/4 G | e/4 c/ G/4 z/ ^G/ A/4 f/ f/4 A |
+B/4 f/ f/4 (3f/ e/ d/ c/4 G/ G/4 C | e/4 c/ G/4 z/ ^G/ A/4 f/ f/4 A | (3B/ a/ a/ (3a/ g/ f/ e/4 c/ A/4 G | e/4 c/ G/4 z/ ^G/ A/4 f/ f/4 A | B/4 f/ f/4 (3f/ e/ d/ c/4 G/ G/4 C |
+c/4 c/ c/4 z/4 c/4 d/ e/4 c/ A/4 G | c/4 c/ c/4 z/4 c/4 d/4 e/4 z2 | c/4 c/ c/4 z/4 c/4 d/ e/4 c/ A/4 G | e/4 e/ e/4 z/4 c/4 e/ g G |
+e/4 c/ G/4 z/ ^G/ A/4 f/ f/4 A | (3B/ a/ a/ (3a/ g/ f/ e/4 c/ A/4 G | e/4 c/ G/4 z/ ^G/ A/4 f/ f/4 A | B/4 f/ f/4 (3f/ e/ d/ c/4 G/ G/4 C |
+G4 |]
+V:SAW
+D/4 D/ D/4 z/4 D/4 D/ G G, | G/ z/4 E/4 z/ C/ z/4 F/4 z/4 G/4 z/4 _G/4 F/ | (3E/ c/ e/ f/ d/4 e/4 z/4 c/4 z/4 A/4 B/4 G/4 z/ | G/ z/4 E/4 z/ C/ z/4 F/4 z/4 G/4 z/4 _G/4 F/ |
+(3E/ c/ e/ f/ d/4 e/4 z/4 c/4 z/4 A/4 B/4 G/4 z/ | C/ z/4 G/4 z/ c/ F/ z/4 c/4 c/4 c/4 F/ | C/ z/4 E/4 z/ G/4 c/4 z/4 f/4 z/4 f/4 f/ A/ | C/ z/4 G/4 z/ c/ F/ z/4 c/4 c/4 c/4 F/ |
+C/ _A/ z/4 _B/4 z/ c/ z/4 G/4 G/ C/ | C/ z/4 G/4 z/ c/ F/ z/4 c/4 c/4 c/4 F/ | C/ z/4 E/4 z/ G/4 c/4 z/4 f/4 z/4 f/4 f/ A/ | C/ z/4 G/4 z/ c/ F/ z/4 c/4 c/4 c/4 F/ |
+C/ _A/ z/4 _B/4 z/ c/ z/4 G/4 G/ C/ | _A,/ z/4 _E/4 z/ _B/ A/ z/4 C/4 z/ G,/ | _A,/ z/4 _E/4 z/ _B/ A/ z/4 C/4 z/ G,/ | _A,/ z/4 _E/4 z/ _B/ A/ z/4 C/4 z/ G,/ |
+D/4 D/ D/4 z/4 D/4 D/ G G, | G/ z/4 E/4 z/ C/ z/4 F/4 z/4 G/4 z/4 _G/4 F/ | (3E/ c/ e/ f/ d/4 e/4 z/4 c/4 z/4 A/4 B/4 G/4 z/ | G/ z/4 E/4 z/ C/ z/4 F/4 z/4 G/4 z/4 _G/4 F/ |
+(3E/ c/ e/ f/ d/4 e/4 z/4 c/4 z/4 A/4 B/4 G/4 z/ | C/ z/4 G/4 G/ c/ F/ F/ c/4 c/4 F/ | D/ z/4 F/4 G/ B/ G/ G/ B/4 B/4 G/ | C/ z/4 G/4 G/ c/ F/ F/ c/4 c/4 F/ |
+G/ z/4 G/4 (3G/ A/ B/ c/ G/ C | C/ z/4 G/4 G/ c/ F/ F/ c/4 c/4 F/ | D/ z/4 F/4 G/ B/ G/ G/ B/4 B/4 G/ | C/ z/4 G/4 G/ c/ F/ F/ c/4 c/4 F/ | G/ z/4 G/4 (3G/ A/ B/ c/ G/ C |
+_A,/ z/4 _E/4 z/ _B/ A/ z/4 C/4 z/ G,/ | _A,/ z/4 _E/4 z/ _B/ A/ z/4 C/4 z/ G,/ | _A,/ z/4 _E/4 z/ _B/ A/ z/4 C/4 z/ G,/ | D/4 D/ D/4 z/4 D/4 D/ G G, |
+C/ z/4 G/4 G/ c/ F/ F/ c/4 c/4 F/ | D/ z/4 F/4 G/ B/ G/ G/ B/4 B/4 G/ | C/ z/4 G/4 G/ c/ F/ F/ c/4 c/4 F/ | G/ z/4 G/4 (3G/ A/ B/ c/ G/ C |
+C4 |]
 ]]
 
 point_sfx = "c/4d/4e/4g/4"

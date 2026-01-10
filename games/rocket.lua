@@ -18,6 +18,9 @@ running = true
 landing = false
 flip_timer = 0
 landing_timer = 0
+prev_speed = 0
+
+point_sfx = "c/4d/4e/4g/4"
 
 text(255,255,255,255)
 
@@ -89,6 +92,7 @@ function _draw()
             landing = false
             log("landing successful! points: " .. points)
             landing_timer = millis()
+            sfx(point_sfx)
         end
 
         dx = 0
@@ -122,6 +126,7 @@ function _draw()
         points = points + 1
         log("flip! points: " .. points)
         flip_timer = millis()
+        sfx(point_sfx)
     end
 
     -- physics
@@ -129,6 +134,23 @@ function _draw()
     x = x + dx
     m_x = m_x + m_dx
     m_y = m_y + m_dy
+
+    -- sound effect
+    speed = math.abs(dx + dy)
+   log(prev_speed, speed)
+    --if prev_speed > 0.5 and speed < 0.5 then
+    --    log("stop music")
+    --    music("")
+    -- end
+    if prev_speed < 0.5 and speed > 0.5 then
+        music("V:NOISE C2")
+        log("low")
+    end 
+    if prev_speed < 1.2 and speed > 1.2 then
+        music("V:NOISE E2")
+        log("high")
+    end
+    prev_speed = speed
 
     -- wrap
     if x < -10 then
@@ -200,6 +222,7 @@ function _draw()
         m_timer = millis()
         if millis() > 10000 then
             points = points + 1
+            sfx(point_sfx)
             log("meteor avoided! points: " .. points)
         end
     end
