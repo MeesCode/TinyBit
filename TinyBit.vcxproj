@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)\include;$(SolutionDir)\include\SDL2_mixer;$(SolutionDir)\tinybit;$(SolutionDir)\tinybit\lua;$(SolutionDir)\tinybit\pngle;C:\glew\include;C:\SDL_image\include;C:\SDL\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\include;$(SolutionDir)\include\SDL2_mixer;$(SolutionDir)\tinybit;$(SolutionDir)\tinybit\lua;$(SolutionDir)\tinybit\pngle;$(SolutionDir)\src\tinybit\ABC-parser;C:\glew\include;C:\SDL_image\include;C:\SDL\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\glew\lib\Release\x64;C:\SDL_image\lib\x64;C:\SDL\lib\x64;$(SolutionDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -106,7 +106,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -136,6 +136,7 @@
     <ClCompile Include="src\tinybit\audio.c" />
     <ClCompile Include="src\tinybit\font.c" />
     <ClCompile Include="src\tinybit\graphics.c" />
+    <ClCompile Include="src\tinybit\helpers.c" />
     <ClCompile Include="src\tinybit\input.c" />
     <ClCompile Include="src\tinybit\lua\lapi.c" />
     <ClCompile Include="src\tinybit\lua\lauxlib.c" />
@@ -174,6 +175,7 @@
     <ClCompile Include="src\tinybit\pngle\miniz.c" />
     <ClCompile Include="src\tinybit\pngle\pngle.c" />
     <ClCompile Include="src\tinybit\tinybit.c" />
+    <ClCompile Include="src\tinybit\ABC-parser\abc_parser.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\getopt.h" />
@@ -181,6 +183,7 @@
     <ClInclude Include="src\tinybit\audio.h" />
     <ClInclude Include="src\tinybit\font.h" />
     <ClInclude Include="src\tinybit\graphics.h" />
+    <ClInclude Include="src\tinybit\helpers.h" />
     <ClInclude Include="src\tinybit\input.h" />
     <ClInclude Include="src\tinybit\lua\lapi.h" />
     <ClInclude Include="src\tinybit\lua\lauxlib.h" />
@@ -215,6 +218,7 @@
     <ClInclude Include="src\tinybit\pngle\miniz.h" />
     <ClInclude Include="src\tinybit\pngle\pngle.h" />
     <ClInclude Include="src\tinybit\tinybit.h" />
+    <ClInclude Include="src\tinybit\ABC-parser\abc_parser.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\flappy.png" />
