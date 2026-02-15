@@ -21,15 +21,15 @@
 #include "tinybit/tinybit.h"
 
 struct TinyBitMemory tb_mem = {0};
-bool button_state[TB_BUTTON_COUNT] = {0};
 
 SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Texture* render_target;
 
+bool game_running = true;
+
 // Audio state
 static SDL_AudioDeviceID audio_device = 0;
-static int16_t audio_buffer[TB_AUDIO_FRAME_SAMPLES] = {0};
 
 #ifdef _POSIX_C_SOURCE
 static struct timespec start_time = { 0, 0 };
@@ -87,19 +87,18 @@ void handle_input() {
 
     // quit if ESC is pressed or window is closed
     if(event.type == SDL_QUIT || state[(SDL_Scancode) SDL_SCANCODE_ESCAPE] == 1) {
-        tinybit_quit();
-        return;
+        game_running = false;
     }
 
     // get button input
-    button_state[TB_BUTTON_A] = (state[(SDL_Scancode) SDL_SCANCODE_A] == 1);
-    button_state[TB_BUTTON_B] = (state[(SDL_Scancode) SDL_SCANCODE_B] == 1);
-    button_state[TB_BUTTON_UP] = (state[(SDL_Scancode) SDL_SCANCODE_UP] == 1);
-    button_state[TB_BUTTON_DOWN] = (state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1);
-    button_state[TB_BUTTON_LEFT] = (state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1);
-    button_state[TB_BUTTON_RIGHT] = (state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1);
-    button_state[TB_BUTTON_START] = (state[(SDL_Scancode) SDL_SCANCODE_RETURN] == 1);
-    button_state[TB_BUTTON_SELECT] = (state[(SDL_Scancode) SDL_SCANCODE_BACKSPACE] == 1);
+    tb_mem.button_input[TB_BUTTON_A] = (state[(SDL_Scancode) SDL_SCANCODE_A] == 1);
+    tb_mem.button_input[TB_BUTTON_B] = (state[(SDL_Scancode) SDL_SCANCODE_B] == 1);
+    tb_mem.button_input[TB_BUTTON_UP] = (state[(SDL_Scancode) SDL_SCANCODE_UP] == 1);
+    tb_mem.button_input[TB_BUTTON_DOWN] = (state[(SDL_Scancode) SDL_SCANCODE_DOWN] == 1);
+    tb_mem.button_input[TB_BUTTON_LEFT] = (state[(SDL_Scancode) SDL_SCANCODE_LEFT] == 1);
+    tb_mem.button_input[TB_BUTTON_RIGHT] = (state[(SDL_Scancode) SDL_SCANCODE_RIGHT] == 1);
+    tb_mem.button_input[TB_BUTTON_START] = (state[(SDL_Scancode) SDL_SCANCODE_RETURN] == 1);
+    tb_mem.button_input[TB_BUTTON_SELECT] = (state[(SDL_Scancode) SDL_SCANCODE_BACKSPACE] == 1);
 }
 
 // Render the TinyBit display buffer to SDL texture and present to screen
@@ -174,7 +173,7 @@ void audio_queue_frame() {
 
     // Queue the frame's audio data from tinybit's buffer
     // Audio generation is tied to frame rate, so always queue what was generated
-    if (SDL_QueueAudio(audio_device, tinybit_audio_buffer, TB_AUDIO_FRAME_BUFFER_SIZE) != 0) {
+    if (SDL_QueueAudio(audio_device, tb_mem.audio_buffer, TB_AUDIO_FRAME_SAMPLES * sizeof(int16_t)) != 0) {
         printf("Failed to queue audio: %s\n", SDL_GetError());
     }
 }
@@ -346,7 +345,7 @@ int main(int argc, char* argv[]) {
 
     // start game selector ui
     if(argc == 1) {
-        tinybit_init(&tb_mem, button_state, audio_buffer);
+        tinybit_init(&tb_mem);
         tinybit_start();
 
         play_game();
@@ -354,7 +353,7 @@ int main(int argc, char* argv[]) {
 
     // load game from file
     else if (argc == 2) {
-        tinybit_init(&tb_mem, button_state, audio_buffer);
+        tinybit_init(&tb_mem);
 
         printf("Loading game: %s\n", argv[1]);
 
@@ -541,8 +540,21 @@ void play_game() {
     // Initialize audio subsystem
     audio_init();
 
-    tinybit_loop();
+    while(game_running){
 
+        if(!game_running) {
+            break;
+        }
+
+        tinybit_loop(); 
+
+        // buffer one frame in advance to ensure seamless audio playback - wait if audio queue is full to match 60 FPS
+        while(SDL_GetQueuedAudioSize(audio_device) > TB_AUDIO_FRAME_SAMPLES * sizeof(int16_t) * 2) {
+            SDL_Delay(1);
+        }
+    }
+
+    tinybit_stop();
     SDL_DestroyTexture(render_target);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
