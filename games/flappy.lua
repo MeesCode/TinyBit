@@ -101,7 +101,9 @@ function _draw()
 		dy = -1.8
 		start = true
 		r = -30
-		sfx(flap_sfx)
+		if not sfx_active() then
+			sfx(flap_sfx)
+		end
 	end
 
 	-- reset with Z button
