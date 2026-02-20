@@ -51,16 +51,16 @@ void audio_cleanup();
 void audio_queue_frame();
 
 // Print usage information for the TinyBit emulator
-void print_usage() {
-    printf("TinyBit Virtual Console\n\n");
-    printf("Usage:\n");
-    printf("  tinybit                                          Start the game selector\n");
-    printf("  tinybit <file.tb.png>                           Play a cartridge file\n");
-    printf("  tinybit -c <sprites.png> <script.lua> <cover.png> <out.tb.png>\n");
-    printf("                                                   Export a cartridge file\n\n");
-    printf("Options:\n");
-    printf("  -h, --help    Show this help message\n");
-    printf("  -c            Compress a spritesheet and Lua script into a cartridge\n");
+void print_usage(FILE* stream) {
+    fprintf(stream, "TinyBit Virtual Console\n\n");
+    fprintf(stream, "Usage:\n");
+    fprintf(stream, "  tinybit\n");
+    fprintf(stream, "  tinybit <file.tb.png>\n");
+    fprintf(stream, "  tinybit -c <sprites.png> <script.lua> <cover.png> <out.tb.png>\n\n");
+    fprintf(stream, "Options:\n");
+    fprintf(stream, "  -h, --help  Show this help message\n");
+    fprintf(stream, "  -c          Export a cartridge from spritesheet, script, and cover image\n\n");
+    fprintf(stream, "When run without arguments, starts the game selector.\n");
 }
 
 // Load a game cartridge file into TinyBit memory
@@ -351,41 +351,58 @@ int main(int argc, char* argv[]) {
     // check for help flag
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            print_usage();
+            print_usage(stdout);
             return 0;
         }
     }
 
     // start game selector ui
-    if(argc == 1) {
+    if (argc == 1) {
         tinybit_init(&tb_mem);
-        tinybit_start();
-
-        play_game();
-    }
-
-    // load game from file
-    else if (argc == 2) {
-        tinybit_init(&tb_mem);
-
-        printf("Loading game: %s\n", argv[1]);
-
-        // load game into memory
-        load_game(argv[1]); 
         tinybit_start();
 
         play_game();
     }
 
     // export game to cartridge file
-    else if (strcmp(argv[1], "-c") == 0 && argc == 6) {
-        export_cartridge(argv[2],argv[3],argv[4],argv[5]);
+    else if (strcmp(argv[1], "-c") == 0) {
+        if (argc != 6) {
+            fprintf(stderr, "Error: -c requires exactly 4 arguments\n\n");
+            print_usage(stderr);
+            return 1;
+        }
+        export_cartridge(argv[2], argv[3], argv[4], argv[5]);
     }
 
-    // show help message
+    // reject unknown flags
+    else if (argv[1][0] == '-') {
+        fprintf(stderr, "Error: unknown option '%s'\n\n", argv[1]);
+        print_usage(stderr);
+        return 1;
+    }
+
+    // load game from file
+    else if (argc == 2) {
+        size_t len = strlen(argv[1]);
+        if (len < 7 || strcmp(argv[1] + len - 7, ".tb.png") != 0) {
+            fprintf(stderr, "Error: '%s' is not a valid cartridge file (expected .tb.png)\n\n", argv[1]);
+            print_usage(stderr);
+            return 1;
+        }
+
+        tinybit_init(&tb_mem);
+        printf("Loading game: %s\n", argv[1]);
+        load_game(argv[1]);
+        tinybit_start();
+
+        play_game();
+    }
+
+    // unexpected arguments
     else {
-        print_usage();
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: unexpected arguments\n\n");
+        print_usage(stderr);
+        return 1;
     }
 
     return 0;
