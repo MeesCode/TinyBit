@@ -57,10 +57,11 @@ void render_frame() {
 
     for (int y = 0; y < 128; ++y) {
         for (int x = 0; x < 128; ++x) {
-            uint8_t r = (tb_mem.display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 0) & 0xf0;
-            uint8_t g = (tb_mem.display[(y * TB_SCREEN_WIDTH + x) * 2 + 0] << 4) & 0xf0;
-            uint8_t b = (tb_mem.display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 0) & 0xf0;
-            uint8_t a = (tb_mem.display[(y * TB_SCREEN_WIDTH + x) * 2 + 1] << 4) & 0xf0;
+            uint16_t pixel = tb_mem.display[y * TB_SCREEN_WIDTH + x];
+            uint8_t r = pixel & 0xf0;
+            uint8_t g = (pixel & 0x0f) << 4;
+            uint8_t b = (pixel >> 8) & 0xf0;
+            uint8_t a = ((pixel >> 8) & 0x0f) << 4;
 
             pixels[y * (pitch / 4) + x] = r << 24 | g << 16 | b << 8 | a;
         }
