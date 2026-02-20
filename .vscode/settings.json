@@ -10,5 +10,6 @@
         "lua.h": "c",
         "font.h": "c",
         "lauxlib.h": "c"
-    }
+    },
+    "cmake.sourceDirectory": "C:/Users/mbrin/source/repos/TinyBit/src/tinybit"
 }
