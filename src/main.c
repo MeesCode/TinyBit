@@ -52,10 +52,15 @@ void audio_queue_frame();
 
 // Print usage information for the TinyBit emulator
 void print_usage() {
-    printf("Usage: tinybit [] [-c spritesheet.png script.lua cover.png file.tb.png] [file.tb.png]\n");
-    printf("empty => start game selector\n");
-    printf("-c => compress a spritesheet and lua file into a cartridge file\n");
-    printf("file => play a cartridge file\n");
+    printf("TinyBit Virtual Console\n\n");
+    printf("Usage:\n");
+    printf("  tinybit                                          Start the game selector\n");
+    printf("  tinybit <file.tb.png>                           Play a cartridge file\n");
+    printf("  tinybit -c <sprites.png> <script.lua> <cover.png> <out.tb.png>\n");
+    printf("                                                   Export a cartridge file\n\n");
+    printf("Options:\n");
+    printf("  -h, --help    Show this help message\n");
+    printf("  -c            Compress a spritesheet and Lua script into a cartridge\n");
 }
 
 // Load a game cartridge file into TinyBit memory
@@ -342,6 +347,14 @@ int main(int argc, char* argv[]) {
     tinybit_sleep_cb(SDL_Delay);
     tinybit_get_ticks_ms_cb(get_ticks_ms);
     tinybit_audio_queue_cb(audio_queue_frame);
+
+    // check for help flag
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            print_usage();
+            return 0;
+        }
+    }
 
     // start game selector ui
     if(argc == 1) {
