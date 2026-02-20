@@ -22,7 +22,7 @@ prev_speed = 0
 
 point_sfx = "c/4d/4e/4g/4"
 
-text(255,255,255,255)
+text(rgba(255, 255, 255, 255))
 
 for i=1,30 do 
     star = {
@@ -52,7 +52,7 @@ function reset()
 end
 
 reset()
-fill(0, 0, 0, 150)
+fill(rgba(0, 0, 0, 150))
 
 function _draw()
 
@@ -161,7 +161,7 @@ function _draw()
     end
 
     -- draw stars
-    stroke(1, 255, 255, 255, 255)
+    stroke(1, rgba(255, 255, 255, 255))
     for _, star in ipairs(stars) do
         -- move stars
         star.x = star.x - 0.2
@@ -204,7 +204,7 @@ function _draw()
 
     -- draw points
     cursor(4, 122)
-    stroke(255, 255, 255, 255, 255)
+    stroke(255, rgba(255, 255, 255, 255))
     if points >= 0 then
         print("points:" .. points)
     end

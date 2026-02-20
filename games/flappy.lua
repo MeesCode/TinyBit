@@ -1,5 +1,5 @@
 
-text(255, 255, 255, 255)
+text(rgba(255, 255, 255, 255))
 
 -- variables for physics
 y = 64
@@ -125,8 +125,8 @@ function _draw()
 	cls()
 
 	-- draw moving background
-	stroke(0,0,0,0,0)
-	fill(78, 192, 202, 255)
+	stroke(0, rgba(0, 0, 0, 0))
+	fill(rgba(78, 192, 202, 255))
 	rect(0, 0, 128, 76)
 	sprite(0, 75, 87, 128-75, -((millis()//90) % 87), 75, 87, 128-75)
 	sprite(0, 75, 87, 128-75, -((millis()//90) % 87) + 87, 75, 87, 128-75)
@@ -143,7 +143,7 @@ function _draw()
 	end
 
 	-- debug info
-	-- fill(0, 0, 0, 100)
+	-- fill(rgba(0, 0, 0, 100))
 	-- cursor(2, 114)
 	-- print("Height: " .. math.floor(y) .. "\nPipe x: " .. math.floor(pipe_x))
 
@@ -158,8 +158,8 @@ function _draw()
 	end
 
 	-- draw hitboxes
-	-- fill(0,0,0,0)
-	-- stroke(1,255,0,0,255)
+	-- fill(rgba(0, 0, 0, 0))
+	-- stroke(1, rgba(255, 0, 0, 255))
 	-- rect(20, y, 17, 12)
 	-- rect(pipe_x//1, pipes[1] - pipe_v_dist - 60, 26, 73)
 	-- rect(pipe_x//1, pipes[1] + pipe_v_dist, 26, 73)
