@@ -54,6 +54,36 @@ end
 reset()
 fill(rgba(0, 0, 0, 150))
 
+tune = [[
+X:1
+T:Interstellar
+L:1/4
+Q:1/4=80
+M:3/4
+K:C
+V:1
+E/C/ E/C/ E/C/ | E/C/ E/C/ E/C/ :| E/C/ E/C/ E/C/ | E/D/ E/D/ E/D/ | !mp! E/C/ E/D/ E/D/ | E/D/ E/D/ E/D/ |
+E/D/ E/D/ E/D/ | E/D/ E/D/ E/D/ || !p! [A,EA] e2 | [A,EA] e2 | [B,EB] e2 | [B,EB] e2 |  [CEc] e2 | [CEc] e2 | [DEd] e2 |
+!<(! [DEd] e B!<)! || !mp! [A,EA] e2 | [A,EA] e2 | [B,EB] e2 | [B,EB] e2 |  [CEc] e2 | [CEc] e2 | [DEd] e2 |!<(! [DEd] e B!<)! ||
+!mf! [A,EA] e A | [A,EA] e A | [B,EB] e B | [B,EB] e B |  [CEc] e c | [CEc] e c | [DEd] e d |!<(! [DEd] e B!<)! ||
+!f! [A,EA] e A | [A,EA] e A | [B,EB] e B | [B,EB] e B |  [CEc] e c | [CEc] e c | [DEd] e d | [DEd] e B |
+!mf! e3- | e3 ||!mp! (3c/4A/4E/4(3c/4A/4E/4 (3c/4A/4E/4(3c/4A/4E/4 (3d/4A/4E/4(3c/4A/4E/4 | (3d/4A/4E/4(3d/4A/4E/4 (3d/4A/4E/4(3d/4A/4E/4 (3d/4A/4E/4(3d/4A/4E/4 |
+(3f/4c/4A/4(3f/4c/4A/4 (3f/4c/4A/4(3g/4c/4A/4 (3g/4c/4A/4(3g/4c/4A/4 | (3b/4g/4e/4(3b/4g/4e/4 (3b/4g/4e/4(3b/4g/4e/4 (3b/4g/4e/4(3b/4g/4e/4 | (3c'/4g/4e/4(3c'/4g/4e/4 (3c'/4g/4e/4(3c'/4g/4e/4 (3c'/4g/4e/4(3c'/4g/4e/4 |
+(3d'/4g/4e/4(3d'/4g/4e/4 (3d'/4g/4e/4(3d'/4g/4e/4 (3d'/4g/4e/4(3d'/4g/4e/4 |  e3- | e3
+V:2
+x3 | x3 :| [A,A]3 | [B,B]3 |  x3 | x3 |
+x3 | x3 ||  x3 | x3 | x3 | x3 |  x3 | x3 | x3 |
+x3 ||  x3 | x3 | x3 | x3 |  x3 | x3 | x3 | x3 ||
+x3 | x3 | x3 | x3 |  x3 | x3 | x3 | x3 ||
+x3 | x3 | x3 | x3 |  x3 | x3 | x3 | x3 |
+E E E | E E E || x3 | x3 |
+x3 | x3 | x3 |
+x3 |  E2 E | E E !^!E |
+
+]]
+
+music(tune)
+
 function _draw()
 
     if not running then
@@ -79,6 +109,9 @@ function _draw()
             r = (r + 3.5)
         end
         if btn(UP) or btn(A) then
+            if not sfx_active() then
+                sfx("V:NOISE C1")
+            end
             dx = dx + 0.025 * math.sin(math.rad(r))
             dy = dy - 0.025 * math.cos(math.rad(r))
         end
@@ -121,8 +154,14 @@ function _draw()
     end
 
     -- points for flip
-    if math.abs(r) > 360 then
-        r = r % 360
+    if r > 360 then
+        r = r - 360
+        points = points + 1
+        log("flip! points: " .. points)
+        flip_timer = millis()
+        sfx(point_sfx)
+    elseif r < -360 then
+        r = r + 360
         points = points + 1
         log("flip! points: " .. points)
         flip_timer = millis()
@@ -136,21 +175,21 @@ function _draw()
     m_y = m_y + m_dy
 
     -- sound effect
-    speed = math.abs(dx + dy)
-   log(prev_speed, speed)
-    --if prev_speed > 0.5 and speed < 0.5 then
-    --    log("stop music")
-    --    music("")
-    -- end
-    if prev_speed < 0.5 and speed > 0.5 then
-        music("V:NOISE C2")
-        log("low")
-    end 
-    if prev_speed < 1.2 and speed > 1.2 then
-        music("V:NOISE E2")
-        log("high")
-    end
-    prev_speed = speed
+--     speed = math.abs(dx + dy)
+-- --    log(prev_speed, speed)
+--     --if prev_speed > 0.5 and speed < 0.5 then
+--     --    log("stop music")
+--     --    music("")
+--     -- end
+--     if prev_speed < 0.5 and speed > 0.5 then
+--         music("V:NOISE C2")
+--         log("low")
+--     end 
+--     if prev_speed < 1.2 and speed > 1.2 then
+--         music("V:NOISE E2")
+--         log("high")
+--     end
+--     prev_speed = speed
 
     -- wrap
     if x < -10 then
@@ -195,9 +234,10 @@ function _draw()
     -- collision with planet or meteor
     if (y >= 99 and (dy > 0.4 or math.abs(dx) > 0.4 or (r > 20 and r < 340)) or 
         (math.sqrt(math.abs(x-m_x)*math.abs(x-m_x) + math.abs(y-m_y)*math.abs(y-m_y)) < 17)) then
+        sfx("V:NOISE C,4 V:SAW C,,4")
         running = false
         log("game over")
-        sprite(97, 15, 23, 24, x-11, y-13, 23, 24)
+        sprite(98, 16, 24, 28, x-11, y-13, 24, 28)
         cursor(64 - (10*4)/2, 60)
         print("game over")
     end
