@@ -1,12 +1,13 @@
 # TinyBit Virtual Console
 
-TinyBit is a virtual console for creating and playing simple 2D games using Lua scripting. Games are stored as PNG cartridge files that embed both the spritesheet assets and Lua script data.
+TinyBit is a virtual console for creating and playing simple 2D games using Lua scripting. Games are stored as PNG cartridge files that steganographically embed both spritesheet assets and Lua script data.
 
 ## Features
 
-- **128x128 pixel display** with 4-bit RGBA color depth
+- **128x128 pixel display** with 4-bit RGBA color depth (RGBA4444)
 - **Lua scripting** for game logic with built-in graphics, input, and audio APIs
-- **PNG-based cartridge format** that embeds spritesheets and code
+- **PNG-based cartridge format** that embeds spritesheets and code in image LSBs
+- **Audio engine** with ABC notation music and sound effects
 - **Built-in game selector** for managing multiple games
 - **Cross-platform** support (Windows, Linux, macOS)
 
@@ -41,41 +42,37 @@ git submodule init
 git submodule update --recursive
 ```
 
-3. Compile:
+3. Build with CMake:
 ```bash
-make
+mkdir build && cd build
+cmake ..
+cmake --build .
 ```
 
 ### Running
 
 #### Launch Game Selector
 ```bash
-./bin/tinybit
+./build/tinybit
 ```
 
 #### Play a Specific Game
 ```bash
-./bin/tinybit games/flappy.tb.png
+./build/tinybit games/flappy.tb.png
 ```
 
 #### Create a Cartridge
 ```bash
-./bin/tinybit -c spritesheet.png script.lua cover.png output.tb.png
+./build/tinybit -c spritesheet.png script.lua cover.png output.tb.png
 ```
 
-## TinyBit API Reference
-
-### System Specifications
+## System Specifications
 
 - **Screen Resolution**: 128x128 pixels
-- **Color Depth**: 4-bit RGBA (16 levels per channel)
-- **Memory Layout**:
-  - Spritesheet: 32KB (0x00000-0x07FFF)
-  - Display: 32KB (0x08000-0x0FFFF)  
-  - Script: 12KB (0x10000-0x12FFF)
-  - User: 4KB (0x13000-0x13FFF)
-- **Total Memory**: 80KB
+- **Color Depth**: 4-bit RGBA (RGBA4444, 16 levels per channel)
 - **Cartridge Size**: 200x230 pixels (PNG format)
+- **Audio**: 22kHz 16-bit PCM, 2 channels (music + SFX)
+- **Target Frame Rate**: 60 FPS
 
 ### Input Controls
 
@@ -90,75 +87,84 @@ make
 | START | Enter |
 | SELECT | Backspace |
 
-### Lua API Functions
+## Lua API Reference
 
-#### Graphics Functions
+### Graphics
 
-**Drawing Primitives**
 - `cls()` - Clear the display
+- `sprite(sx, sy, sw, sh, dx, dy, dw, dh [, rotation])` - Draw sprite with optional rotation
+- `duplicate(sx, sy, sw, sh, dx, dy, dw, dh [, rotation])` - Copy display region
 - `rect(x, y, w, h)` - Draw rectangle
 - `oval(x, y, w, h)` - Draw oval
 - `line(x1, y1, x2, y2)` - Draw line
-- `sprite(sx, sy, sw, sh, dx, dy, dw, dh [, rotation])` - Draw sprite with optional rotation
 
-**Polygon Drawing**
+#### Polygon Drawing
 - `poly_add(x, y)` - Add vertex to polygon
 - `poly_clear()` - Clear polygon vertices
 - `draw_polygon()` - Draw filled polygon with current vertices
 
-**Colors and Styles**
-- `fill(r, g, b, a)` - Set fill color (0-255 per channel)
-- `stroke(width, r, g, b, a)` - Set stroke color and width
-- `text(r, g, b, a)` - Set text color
+#### Colors and Styles
 
-#### Text Functions
+Colors are packed RGBA8888 values. Use the color helper functions to create them:
+
+- `fill(color)` - Set fill color
+- `stroke(width, color)` - Set stroke width and color
+- `text(color)` - Set text color
+- `rgba(r, g, b, a)` - Create color from RGBA (0-255 per channel)
+- `rgb(r, g, b)` - Create color from RGB (alpha defaults to 255)
+- `hsb(h, s, b)` - Create color from HSB (0-255 per component)
+- `hsba(h, s, b, a)` - Create color from HSBA (0-255 per component)
+
+### Text
 - `cursor(x, y)` - Set text cursor position
 - `print(text)` - Print text at cursor position
 
-#### Input Functions
+### Input
 - `btn(button)` - Check if button is currently held
 - `btnp(button)` - Check if button was just pressed this frame
 
 Button constants: `A`, `B`, `UP`, `DOWN`, `LEFT`, `RIGHT`, `START`, `SELECT`
 
-#### Audio Functions (Placeholder)
-- `tone(note, octave, duration, waveform [, volume, channel])` - Play musical tone
-- `noise(duration [, volume, channel])` - Play white noise
-- `bpm(beats_per_minute)` - Set tempo for timing
+### Audio
+- `music(abc_string)` - Play looping music from ABC notation
+- `sfx(abc_string)` - Play one-shot sound effect from ABC notation
+- `sfx_active()` - Check if a sound effect is currently playing
+- `bpm(beats_per_minute)` - Set tempo
 
-Audio constants:
-- Notes: `C`, `Cs`/`Db`, `D`, `Ds`/`Eb`, `E`, `F`, `Fs`/`Gb`, `G`, `Gs`/`Ab`, `A`, `As`/`Bb`, `B`
-- Waveforms: `SINE`, `SAW`, `SQUARE`
+Waveform constants: `SINE`, `SAW`, `SQUARE`, `NOISE`
 
-#### Memory Functions
-- `peek(address)` - Read byte from memory
-- `poke(address, value)` - Write byte to memory  
+### Memory
+- `peek(address)` - Read byte from user memory
+- `poke(address, value)` - Write byte to user memory
 - `copy(dest, src, size)` - Copy memory region
 
-#### Utility Functions
+### Utilities
 - `millis()` - Get current frame time in milliseconds
 - `random(min, max)` - Generate random integer in range
 - `log(message)` - Print debug message to console
+- `sleep(ms)` - Delay execution
 
-#### Game Management (Selector Only)
+### Game Management (Selector Only)
 - `gamecount()` - Get number of available games
 - `gamecover(index)` - Load game cover for preview
 - `gameload(index)` - Load and start game by index
 
-### Game Structure
+### Global Constants
+- `TB_SCREEN_WIDTH` (128), `TB_SCREEN_HEIGHT` (128)
+
+## Game Structure
 
 Every TinyBit game must implement a `_draw()` function that gets called every frame:
 
 ```lua
 function _draw()
-    -- Game logic and rendering code
-    cls()  -- Clear screen
-    
+    cls()
+
     if btnp(A) then
         -- Handle A button press
     end
-    
-    sprite(0, 0, 16, 16, 50, 50, 16, 16)  -- Draw sprite
+
+    sprite(0, 0, 16, 16, 50, 50, 16, 16)
 end
 ```
 
@@ -171,17 +177,17 @@ dx, dy = 1, 1
 
 function _draw()
     cls()
-    
+
     -- Update position
     x = x + dx
     y = y + dy
-    
+
     -- Bounce off walls
     if x <= 0 or x >= 120 then dx = -dx end
     if y <= 0 or y >= 120 then dy = -dy end
-    
+
     -- Draw ball
-    fill(255, 255, 255, 255)
+    fill(rgb(255, 255, 255))
     oval(x, y, 8, 8)
 end
 ```
@@ -191,46 +197,35 @@ end
 1. **Create Assets**: Design a 128x128 pixel spritesheet PNG
 2. **Write Script**: Create a Lua file with your game logic
 3. **Design Cover**: Create a 128x128 pixel cover image PNG
-4. **Export Cartridge**: 
+4. **Export Cartridge**:
    ```bash
-   ./bin/tinybit -c spritesheet.png script.lua cover.png game.tb.png
+   ./build/tinybit -c spritesheet.png script.lua cover.png game.tb.png
    ```
 
 The cartridge format embeds the spritesheet and script data in the least significant bits of the cartridge PNG, while the cover image is overlaid on top for visual identification.
 
-## Development
+## TinyBit Core C API
 
-### Memory Layout
-- **0x00000-0x07FFF**: Spritesheet data (128x128x4 bits)
-- **0x08000-0x0FFFF**: Display buffer (128x128x8 bits) 
-- **0x10000-0x12FFF**: Lua script storage
-- **0x13000-0x13FFF**: User data/variables
-
-### TinyBit Core API
-
-The TinyBit system provides a C API for embedding:
+The TinyBit library can be embedded in any C project. See [src/tinybit/README.md](src/tinybit/README.md) for the full library documentation.
 
 ```c
 // Initialize system
-void tinybit_init(struct TinyBitMemory* memory, uint8_t* button_state_ptr);
+void tinybit_init(struct TinyBitMemory* memory);
 
-// Load cartridge data  
-bool tinybit_feed_cartridge(uint8_t* cartridge_buffer, size_t bytes);
+// Load cartridge data
+bool tinybit_feed_cartridge(const uint8_t* cartridge_buffer, size_t bytes);
 
-// Start game execution
+// Game lifecycle
 bool tinybit_start();
-
-// Main game loop
 void tinybit_loop();
+bool tinybit_restart();
+void tinybit_stop();
 
-// Signal quit
-void tinybit_quit();
-
-// Set callback functions
+// Platform callbacks
 void tinybit_render_cb(void (*render_func_ptr)());
 void tinybit_poll_input_cb(void (*poll_input_func_ptr)());
-void tinybit_sleep_cb(void (*sleep_func_ptr)(int ms));
 void tinybit_get_ticks_ms_cb(int (*get_ticks_ms_func_ptr)());
+void tinybit_audio_queue_cb(void (*audio_queue_func_ptr)());
 void tinybit_log_cb(void (*log_func_ptr)(const char*));
 void tinybit_gamecount_cb(int (*gamecount_func_ptr)());
 void tinybit_gameload_cb(void (*gameload_func_ptr)(int index));

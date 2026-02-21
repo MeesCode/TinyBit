@@ -34,7 +34,6 @@ static void register_callbacks() {
     tinybit_gameload_cb(load_game_by_index);
     tinybit_render_cb(render_frame);
     tinybit_poll_input_cb(handle_input);
-    tinybit_sleep_cb(SDL_Delay);
     tinybit_get_ticks_ms_cb(get_ticks_ms);
     tinybit_audio_queue_cb(audio_queue_frame);
 }
