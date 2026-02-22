@@ -69,7 +69,7 @@ E/D/ E/D/ E/D/ | E/D/ E/D/ E/D/ || !p! [A,EA] e2 | [A,EA] e2 | [B,EB] e2 | [B,EB
 !f! [A,EA] e A | [A,EA] e A | [B,EB] e B | [B,EB] e B |  [CEc] e c | [CEc] e c | [DEd] e d | [DEd] e B |
 !mf! e3- | e3 ||!mp! (3c/4A/4E/4(3c/4A/4E/4 (3c/4A/4E/4(3c/4A/4E/4 (3d/4A/4E/4(3c/4A/4E/4 | (3d/4A/4E/4(3d/4A/4E/4 (3d/4A/4E/4(3d/4A/4E/4 (3d/4A/4E/4(3d/4A/4E/4 |
 (3f/4c/4A/4(3f/4c/4A/4 (3f/4c/4A/4(3g/4c/4A/4 (3g/4c/4A/4(3g/4c/4A/4 | (3b/4g/4e/4(3b/4g/4e/4 (3b/4g/4e/4(3b/4g/4e/4 (3b/4g/4e/4(3b/4g/4e/4 | (3c'/4g/4e/4(3c'/4g/4e/4 (3c'/4g/4e/4(3c'/4g/4e/4 (3c'/4g/4e/4(3c'/4g/4e/4 |
-(3d'/4g/4e/4(3d'/4g/4e/4 (3d'/4g/4e/4(3d'/4g/4e/4 (3d'/4g/4e/4(3d'/4g/4e/4 |  e3- | e3
+(3d'/4g/4e/4(3d'/4g/4e/4 (3d'/4g/4e/4(3d'/4g/4e/4 (3d'/4g/4e/4(3d'/4g/4e/4 |  e3- | e3 |]
 V:2
 x3 | x3 :| [A,A]3 | [B,B]3 |  x3 | x3 |
 x3 | x3 ||  x3 | x3 | x3 | x3 |  x3 | x3 | x3 |
@@ -78,7 +78,7 @@ x3 | x3 | x3 | x3 |  x3 | x3 | x3 | x3 ||
 x3 | x3 | x3 | x3 |  x3 | x3 | x3 | x3 |
 E E E | E E E || x3 | x3 |
 x3 | x3 | x3 |
-x3 |  E2 E | E E !^!E |
+x3 |  E2 E | E E !^!E |]
 
 ]]
 
@@ -174,23 +174,6 @@ function _draw()
     m_x = m_x + m_dx
     m_y = m_y + m_dy
 
-    -- sound effect
---     speed = math.abs(dx + dy)
--- --    log(prev_speed, speed)
---     --if prev_speed > 0.5 and speed < 0.5 then
---     --    log("stop music")
---     --    music("")
---     -- end
---     if prev_speed < 0.5 and speed > 0.5 then
---         music("V:NOISE C2")
---         log("low")
---     end 
---     if prev_speed < 1.2 and speed > 1.2 then
---         music("V:NOISE E2")
---         log("high")
---     end
---     prev_speed = speed
-
     -- wrap
     if x < -10 then
         x = 128 + 10
@@ -217,8 +200,6 @@ function _draw()
 
     -- draw planet
     sprite(0, 106, 128, 22, 0, 106, 128, 22)
-
-    -- log("x: " .. x .. ", y: " .. y .. ", r: " .. r .. ", dx: " .. dx .. ", dy: " .. dy)
     
     -- draw rocket
     if (btn(UP) or btn(A)) and running then
@@ -243,7 +224,7 @@ function _draw()
     end
 
     -- draw points
-    cursor(4, 122)
+    cursor(0, 122)
     stroke(255, rgba(255, 255, 255, 255))
     if points >= 0 then
         print("points:" .. points)
