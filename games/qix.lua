@@ -94,6 +94,23 @@ function is_inside_polygons(x, y)
     return inside
 end
 
+-- take a partial poligon and the players position
+-- draw lines between the points
+function draw_partial_polygon(partial_polygon, x, y)
+    stroke(1, rgba(0, 255, 255, 255))
+    for i = 1, #partial_polygon do
+        local p1 = partial_polygon[i]
+        local p2 = partial_polygon[i % #partial_polygon + 1]
+        if i ~= #partial_polygon then
+            line(p1.x, p1.y, p2.x, p2.y)
+        end
+    end
+    if #partial_polygon > 0 then
+        local last_point = partial_polygon[#partial_polygon]
+        line(last_point.x, last_point.y, x, y)
+    end
+end
+
 -- the player
 Stix = {
     x = 64,
@@ -146,6 +163,11 @@ Stix = {
             elseif btn(LEFT) or btn(RIGHT) then
                 self.dy = 0
             end
+
+            if self.pdx ~= self.dx or self.pdy ~= self.dy then
+                table.insert(self.partial_polygon, {x=self.x, y=self.y})
+            end
+
             if not is_inside_polygons(self.x + self.dx, self.y + self.dy) then
                 self.x = self.x + self.dx
                 self.y = self.y + self.dy
@@ -153,6 +175,9 @@ Stix = {
                 self.dx = 0
                 self.dy = 0
             end
+
+            draw_partial_polygon(self.partial_polygon, self.x, self.y)
+
         end
         if not self.free then
             -- two directional input, try to move in the direction of the new input first, then try the other direction if the first direction is blocked
