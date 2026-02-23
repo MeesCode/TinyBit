@@ -4,7 +4,6 @@ lines = {
     {x1=118, y1=10, x2=118, y2=118},
     {x1=118, y1=118, x2=10, y2=118},
     {x1=10, y1=118, x2=10, y2=10},
-    {x1=64, y1=118, x2=64, y2=10},
 }
 
 function is_equal_lines(line1, line2)
@@ -15,8 +14,8 @@ end
 -- check if a point is between two other points (inclusive)
 -- only works for horizontal or vertical lines, not diagonal lines
 function is_between_points(x, y, line)
-    return (x == line.x1 and x == line.x2 and (y >= line.y1 and y <= line.y2 or y >= line.y2 and y <= line.y1)) or
-           (y == line.y1 and y == line.y2 and (x >= line.x1 and x <= line.x2 or x >= line.x2 and x <= line.x1))
+    return (x == line.x1 and x == line.x2 and ((y >= line.y1 and y <= line.y2) or (y >= line.y2 and y <= line.y1))) or
+           (y == line.y1 and y == line.y2 and ((x >= line.x1 and x <= line.x2) or (x >= line.x2 and x <= line.x1)))
 end
 
 -- find polygon lines that have a start point or end point that is between the start and end point of the line formed by (x1, y1) and (x2, y2)
@@ -71,6 +70,59 @@ function draw_partial_polygon(partial_polygon, x, y)
     end
 end
 
+-- the enemy
+Qix = {
+    x = 64,
+    y = 64,
+    dx = 0,
+    dy = 0,
+
+    draw = function(self)
+        stroke(1, rgba(255, 0, 255, 255))
+        line(self.x-2, self.y-2, self.x + 2, self.y + 2)
+        line(self.x-2, self.y+2, self.x + 2, self.y - 2)
+    end,
+
+    move = function(self)
+        -- simple random movement
+        if math.random() < 0.2 then
+            if math.random() then
+                local direction = math.random(4)
+                if direction == 1 then
+                    self.dx = 1
+                    self.dy = 0
+                elseif direction == 2 then
+                    self.dx = -1
+                    self.dy = 0
+                elseif direction == 3 then
+                    self.dx = 0
+                    self.dy = 1
+                elseif direction == 4 then
+                    self.dx = 0
+                    self.dy = -1
+                end
+            end
+        end
+
+        if not is_line(self.x + self.dx, self.y + self.dy) then
+            self.x = self.x + self.dx
+            self.y = self.y + self.dy
+        end
+
+    end,
+
+    is_colliding_with_player = function (self, player)
+        for i = 1, #player.partial_polygon do
+            local p1 = player.partial_polygon[i]
+            local p2 = player.partial_polygon[i % #player.partial_polygon + 1]
+            if is_between_points(self.x, self.y, {x1=p1.x, y1=p1.y, x2=p2.x, y2=p2.y}) then
+                return true
+            end
+        end
+        return false
+    end
+}
+
 -- the player
 Stix = {
     x = 64,
@@ -98,31 +150,33 @@ Stix = {
         
         if btn(UP) then
             self.dy = -1
-        end
-        if btn(DOWN) then
+        elseif btn(DOWN) then
             self.dy = 1
-        end
-        if btn(LEFT) then
+        elseif btn(LEFT) then
             self.dx = -1
-        end
-        if btn(RIGHT) then
+        elseif btn(RIGHT) then
             self.dx = 1
         end
+
         if btn(B) then
             self.dx = 0
             self.dy = 0
         end
+
         if btn(A) then
             self.free = true
+            table.insert(self.partial_polygon, {x=self.x, y=self.y})
         end
-        if self.free and not btn(A) and is_line(self.x + self.dx, self.y + self.dy) then
+
+        -- free to line
+        if self.free and is_line(self.x + self.dx, self.y + self.dy) then
             self.free = false
             self.x = self.x + self.dx
             self.y = self.y + self.dy
             self.dx = 0
             self.dy = 0
 
-            -- add the lines to the fiels
+            -- add the lines to the field
             table.insert(self.partial_polygon, {x=self.x, y=self.y})
             for i = 1, #self.partial_polygon - 1 do
                 local p1 = self.partial_polygon[i]
@@ -132,13 +186,17 @@ Stix = {
             self.partial_polygon = {}
             return
         end
+
+        -- free movement
         if self.free then
+
             if btn(UP) or btn(DOWN) then
                 self.dx = 0
             elseif btn(LEFT) or btn(RIGHT) then
                 self.dy = 0
             end
 
+            -- changed direction
             if self.pdx ~= self.dx or self.pdy ~= self.dy then
                 table.insert(self.partial_polygon, {x=self.x, y=self.y})
             end
@@ -149,6 +207,8 @@ Stix = {
             draw_partial_polygon(self.partial_polygon, self.x, self.y)
             return
         end
+
+        -- line movement
         if not self.free then
             -- two directional input, try to move in the direction of the new input first, then try the other direction if the first direction is blocked
             if self.dx ~= 0 and self.dy ~= 0 then
@@ -189,6 +249,9 @@ Stix = {
 }
 
 s = Stix
+q = Qix
+
+game_over = false
 
 function _draw() 
 
@@ -201,5 +264,17 @@ function _draw()
 
     s:move()
     s:draw()
-    
+    q:move()
+    q:draw()
+
+    if q:is_colliding_with_player(s) then
+        game_over = true
+        log("Game Over")
+    end
+
+    if game_over then
+        cursor(0, 0)
+        text(rgb(255, 255, 255))
+        print("Game Over")
+    end
 end
