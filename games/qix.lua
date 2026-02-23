@@ -114,7 +114,12 @@ Qix = {
     is_colliding_with_player = function (self, player)
         for i = 1, #player.partial_polygon do
             local p1 = player.partial_polygon[i]
-            local p2 = player.partial_polygon[i % #player.partial_polygon + 1]
+            local p2
+            if i == #player.partial_polygon then
+                p2 = {x=player.x, y=player.y}
+            else
+                p2 = player.partial_polygon[i+1]
+            end
             if is_between_points(self.x, self.y, {x1=p1.x, y1=p1.y, x2=p2.x, y2=p2.y}) then
                 return true
             end
@@ -122,6 +127,20 @@ Qix = {
         return false
     end
 }
+
+-- flood fill area that qix is in
+-- paint the area that qix is in with a different color
+function flood_fill(x, y, color)
+    if is_line(x, y) or pget(x, y) ~= 0 then
+        log(pget)
+        return
+    end
+    pset(x, y, color)
+    flood_fill(x + 1, y, color)
+    flood_fill(x - 1, y, color)
+    flood_fill(x, y + 1, color)
+    flood_fill(x, y - 1, color)
+end
 
 -- the player
 Stix = {
@@ -163,7 +182,7 @@ Stix = {
             self.dy = 0
         end
 
-        if btn(A) then
+        if btn(A) and not self.free then
             self.free = true
             table.insert(self.partial_polygon, {x=self.x, y=self.y})
         end
@@ -266,6 +285,8 @@ function _draw()
     s:draw()
     q:move()
     q:draw()
+
+    flood_fill(q.x-1, q.y, rgba(255, 255, 255, 100))
 
     if q:is_colliding_with_player(s) then
         game_over = true
