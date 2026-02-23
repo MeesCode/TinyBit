@@ -1,97 +1,57 @@
 
-polygons = {}
-
-polygons[1] = {
-    {x=10, y=10},
-    {x=118, y=10},
-    {x=118, y=118},
-    {x=10, y=118},
+lines = {
+    {x1=10, y1=10, x2=118, y2=10},
+    {x1=118, y1=10, x2=118, y2=118},
+    {x1=118, y1=118, x2=10, y2=118},
+    {x1=10, y1=118, x2=10, y2=10},
+    {x1=64, y1=118, x2=64, y2=10},
 }
 
--- polygons[2] = {
---     {x=64, y=10},
---     {x=64, y=118},
---     {x=10, y=118},
---     {x=10, y=10},
--- }
+function is_equal_lines(line1, line2)
+    return (line1.x1 == line2.x1 and line1.y1 == line2.y1 and line1.x2 == line2.x2 and line1.y2 == line2.y2) or
+           (line1.x1 == line2.x2 and line1.y1 == line2.y2 and line1.x2 == line2.x1 and line1.y2 == line2.y1)
+end
 
 -- check if a point is between two other points (inclusive)
 -- only works for horizontal or vertical lines, not diagonal lines
-function is_between_points(pointx, pointy, x1, y1, x2, y2)
-    return (pointx == x1 and pointx == x2 and (pointy >= y1 and pointy <= y2 or pointy >= y2 and pointy <= y1)) or
-           (pointy == y1 and pointy == y2 and (pointx >= x1 and pointx <= x2 or pointx >= x2 and pointx <= x1))
+function is_between_points(x, y, line)
+    return (x == line.x1 and x == line.x2 and (y >= line.y1 and y <= line.y2 or y >= line.y2 and y <= line.y1)) or
+           (y == line.y1 and y == line.y2 and (x >= line.x1 and x <= line.x2 or x >= line.x2 and x <= line.x1))
+end
+
+-- find polygon lines that have a start point or end point that is between the start and end point of the line formed by (x1, y1) and (x2, y2)
+function find_intersecting_lines(x, y)
+    local intersecting_lines = {}
+    for _, line in ipairs(lines) do
+        if is_between_points(x, y, line) then
+            table.insert(intersecting_lines, line)
+        end
+    end
+    return intersecting_lines
 end
 
 -- check if a point is on a line
 function is_line(x2, y2)
-    for _, polygon in ipairs(polygons) do
-        for i = 1, #polygon do
-            local p1 = polygon[i]
-            local p2 = polygon[i % #polygon + 1]
-            if is_between_points(x2, y2, p1.x, p1.y, p2.x, p2.y) then
-                return true
-            end
+    for _, line in ipairs(lines) do
+        if is_between_points(x2, y2, line) then
+            return true
         end
     end
     return false
 end
 
--- find a complete polygon by taking a list of point forming a partial polygon
--- and the list of all existing polygons. Do a breadth first search to find all 
--- points that are connected to the partial polygon 
--- return the complete polygon as a list of points
-function find_complete_polygon(partial_polygon, polygons)
-    local complete_polygon = {}
-    local visited = {}
-    local queue = {}
-
-    -- add all points in the partial polygon to the queue and mark them as visited
-    for _, point in ipairs(partial_polygon) do
-        table.insert(queue, point)
-        visited[point] = true
-    end
-
-    while #queue > 0 do
-        local point = table.remove(queue, 1)
-        table.insert(complete_polygon, point)
-
-        -- check all polygons to find points that are connected to the current point
-        for _, polygon in ipairs(polygons) do
-            for _, p in ipairs(polygon) do
-                if is_between_points(p.x, p.y, point.x, point.y, point.x, point.y) and not visited[p] then
-                    table.insert(queue, p)
-                    visited[p] = true
-                end
-            end
-        end
-
-    end
-    return complete_polygon
-end
-
 -- raycasting algorithm to check if a point is inside a polygon
 -- since there are only horizontal and vertical lines, we only have if check vertical line
-function is_inside_polygons(x, y)
-    local inside = false
-    for n, polygon in ipairs(polygons) do
-        if n == 1 then
-            -- skip the first polygon since it is the outer border
-            goto continue
+-- ignore the border line
+function is_claimed(x, y)
+    local intersecting_lines = find_intersecting_lines(x, y)
+    local count = 0
+    for _, line in ipairs(intersecting_lines) do
+        if line.x1 == line.x2 and line.x1 > x then
+            count = count + 1
         end
-        for i = 1, #polygon do
-            local p1 = polygon[i]
-            local p2 = polygon[i % #polygon + 1]
-            -- check for two points in the polygon if the point lies between the y values of the two points
-            if (p1.y >= y and p2.y <= y) or (p1.y <= y and p2.y >= y) then
-                -- if polygon line is to the right of the point, flip the inside variable
-                if x > p1.x then
-                    inside = not inside
-                end
-            end
-        end
-        ::continue::
     end
-    return inside
+    return count % 2 == 1
 end
 
 -- take a partial poligon and the players position
@@ -135,6 +95,7 @@ Stix = {
     move = function(self)
         self.pdx = self.dx
         self.pdy = self.dy
+        
         if btn(UP) then
             self.dy = -1
         end
@@ -154,8 +115,22 @@ Stix = {
         if btn(A) then
             self.free = true
         end
-        if not btn(A) and is_line(self.x, self.y) then
+        if self.free and not btn(A) and is_line(self.x + self.dx, self.y + self.dy) then
             self.free = false
+            self.x = self.x + self.dx
+            self.y = self.y + self.dy
+            self.dx = 0
+            self.dy = 0
+
+            -- add the lines to the fiels
+            table.insert(self.partial_polygon, {x=self.x, y=self.y})
+            for i = 1, #self.partial_polygon - 1 do
+                local p1 = self.partial_polygon[i]
+                local p2 = self.partial_polygon[i + 1]
+                table.insert(lines, {x1=p1.x, y1=p1.y, x2=p2.x, y2=p2.y})
+            end
+            self.partial_polygon = {}
+            return
         end
         if self.free then
             if btn(UP) or btn(DOWN) then
@@ -168,16 +143,11 @@ Stix = {
                 table.insert(self.partial_polygon, {x=self.x, y=self.y})
             end
 
-            if not is_inside_polygons(self.x + self.dx, self.y + self.dy) then
-                self.x = self.x + self.dx
-                self.y = self.y + self.dy
-            else
-                self.dx = 0
-                self.dy = 0
-            end
+            self.x = self.x + self.dx
+            self.y = self.y + self.dy
 
             draw_partial_polygon(self.partial_polygon, self.x, self.y)
-
+            return
         end
         if not self.free then
             -- two directional input, try to move in the direction of the new input first, then try the other direction if the first direction is blocked
@@ -220,22 +190,14 @@ Stix = {
 
 s = Stix
 
-function draw_polygons(polygon)
-    stroke(1, rgba(255, 255, 255, 255))
-    for _, polygon in ipairs(polygons) do
-        for _, point in ipairs(polygon) do
-            poly_add(point.x, point.y)
-        end
-        draw_polygon()
-        poly_clear()
-    end
-end
-
 function _draw() 
 
     cls()
 
-    draw_polygons(polygons)
+    for _, l in ipairs(lines) do
+        stroke(1, rgba(255, 255, 255, 255))
+        line(l.x1, l.y1, l.x2, l.y2)
+    end
 
     s:move()
     s:draw()
