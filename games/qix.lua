@@ -478,6 +478,8 @@ Stix = {
     end
 }
 
+fill_crossings = {}
+
 function fill_polygon(polygon, color)
     local min_y, max_y = 999, -999
     for _, l in ipairs(polygon) do
@@ -487,20 +489,24 @@ function fill_polygon(polygon, color)
         if l.y2 > max_y then max_y = l.y2 end
     end
 
+    local crossings = fill_crossings
     stroke(1, color)
     for y = min_y, max_y - 1 do
-        local crossings = {}
+        local n = 0
         for _, l in ipairs(polygon) do
             if l.x1 == l.x2 then -- only vertical edges create crossings
                 local ey_min = l.y1 < l.y2 and l.y1 or l.y2
                 local ey_max = l.y1 > l.y2 and l.y1 or l.y2
                 if y >= ey_min and y < ey_max then
-                    table.insert(crossings, l.x1)
+                    n = n + 1
+                    crossings[n] = l.x1
                 end
             end
         end
+        -- clear stale entries from previous iteration
+        for i = n + 1, #crossings do crossings[i] = nil end
         table.sort(crossings)
-        for i = 1, #crossings - 1, 2 do
+        for i = 1, n - 1, 2 do
             line(crossings[i], y, crossings[i+1] - 1, y)
         end
     end
@@ -517,11 +523,14 @@ function _draw()
     cls()
 
     stroke(1, rgba(255, 255, 255, 255))
+    fill(rgba(255, 0, 0, 200))
+    rect(10, 10, 109, 109)
+    fill_polygon(qix_polygon, rgba(0, 0, 0, 255))
+
+    stroke(1, rgba(255, 255, 255, 255))
     for _, l in ipairs(lines) do
         line(l.x1, l.y1, l.x2, l.y2)
     end
-
-    fill_polygon(qix_polygon, rgba(255, 0, 0, 100))
 
     s:move()
     s:draw()
@@ -530,18 +539,14 @@ function _draw()
     sp:move()
     sp:draw()
 
-    stroke(1, rgba(255, 0, 0, 255))
-    for _, l in ipairs(qix_polygon) do
-        line(l.x1, l.y1, l.x2, l.y2)
-    end
-
-    if q:is_colliding_with_player(s) then
+    if q:is_colliding_with_player(s) or sp:is_colliding_with_player(s) then
         game_over = true
         log("Game Over")
     end
 
     if game_over then
         cursor(0, 0)
+        fill(rgba(0, 0, 0, 255))
         text(rgb(255, 255, 255))
         print("Game Over")
     end
