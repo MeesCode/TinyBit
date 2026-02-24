@@ -11,6 +11,17 @@ function is_equal_lines(line1, line2)
            (line1.x1 == line2.x2 and line1.y1 == line2.y2 and line1.x2 == line2.x1 and line1.y2 == line2.y1)
 end
 
+function split_line(x, y)
+    for i, line in ipairs(lines) do
+        if is_between_points(x, y, line) then
+            table.remove(lines, i)
+            table.insert(lines, {x1=line.x1, y1=line.y1, x2=x, y2=y})
+            table.insert(lines, {x1=x, y1=y, x2=line.x2, y2=line.y2})
+            return
+        end
+    end 
+end
+
 -- check if a point is between two other points (inclusive)
 -- only works for horizontal or vertical lines, not diagonal lines
 function is_between_points(x, y, line)
@@ -128,30 +139,15 @@ Qix = {
     end
 }
 
--- flood fill area that qix is in
--- paint the area that qix is in with a different color
-function flood_fill(x, y, color)
-    if is_line(x, y) or pget(x, y) ~= 0 then
-        log(pget)
-        return
-    end
-    pset(x, y, color)
-    flood_fill(x + 1, y, color)
-    flood_fill(x - 1, y, color)
-    flood_fill(x, y + 1, color)
-    flood_fill(x, y - 1, color)
-end
-
 -- the player
 Stix = {
     x = 64,
     y = 118,
     dx = 0,
     dy = 0,
-    pdx = 0,
-    pdy = 0,
     partial_polygon = {},
     free = false,
+    left_line = false,
 
     draw = function(self)
         if self.free then
@@ -164,104 +160,105 @@ Stix = {
     end,
 
     move = function(self)
-        self.pdx = self.dx
-        self.pdy = self.dy
-        
-        if btn(UP) then
-            self.dy = -1
-        elseif btn(DOWN) then
-            self.dy = 1
-        elseif btn(LEFT) then
-            self.dx = -1
-        elseif btn(RIGHT) then
-            self.dx = 1
+        -- read input into a single-axis requested direction
+        local rdx, rdy = 0, 0
+        if btn(UP) then rdy = -1
+        elseif btn(DOWN) then rdy = 1
+        elseif btn(LEFT) then rdx = -1
+        elseif btn(RIGHT) then rdx = 1
         end
 
-        if btn(B) then
-            self.dx = 0
-            self.dy = 0
-        end
-
+        -- start free mode
         if btn(A) and not self.free then
             self.free = true
-            table.insert(self.partial_polygon, {x=self.x, y=self.y})
+            self.left_line = false
         end
 
-        -- free to line
-        if self.free and is_line(self.x + self.dx, self.y + self.dy) then
-            self.free = false
-            self.x = self.x + self.dx
-            self.y = self.y + self.dy
-            self.dx = 0
-            self.dy = 0
-
-            -- add the lines to the field
-            table.insert(self.partial_polygon, {x=self.x, y=self.y})
-            for i = 1, #self.partial_polygon - 1 do
-                local p1 = self.partial_polygon[i]
-                local p2 = self.partial_polygon[i + 1]
-                table.insert(lines, {x1=p1.x, y1=p1.y, x2=p2.x, y2=p2.y})
-            end
-            self.partial_polygon = {}
-            return
-        end
-
-        -- free movement
         if self.free then
-
-            if btn(UP) or btn(DOWN) then
-                self.dx = 0
-            elseif btn(LEFT) or btn(RIGHT) then
-                self.dy = 0
-            end
-
-            -- changed direction
-            if self.pdx ~= self.dx or self.pdy ~= self.dy then
-                table.insert(self.partial_polygon, {x=self.x, y=self.y})
-            end
-
-            self.x = self.x + self.dx
-            self.y = self.y + self.dy
-
-            draw_partial_polygon(self.partial_polygon, self.x, self.y)
-            return
-        end
-
-        -- line movement
-        if not self.free then
-            -- two directional input, try to move in the direction of the new input first, then try the other direction if the first direction is blocked
-            if self.dx ~= 0 and self.dy ~= 0 then
-                -- when horizontal user input, try horizontal move first, then vertical move
-                if btn(LEFT) or btn(RIGHT) then
-                    if is_line(self.x + self.dx, self.y) then
-                        self.x = self.x + self.dx
-                        self.dy = 0
-                        return
-                    elseif is_line(self.x, self.y + self.dy) then
-                        self.y = self.y + self.dy
-                        self.dx = 0
-                        return
+            -- apply requested direction
+            if rdx ~= 0 or rdy ~= 0 then
+                -- only track turns once we've left the line
+                if self.left_line then
+                    local axis_changed = (self.dx ~= 0 and rdy ~= 0) or (self.dy ~= 0 and rdx ~= 0)
+                    if axis_changed then
+                        table.insert(self.partial_polygon, {x=self.x, y=self.y})
                     end
                 end
-                -- when vertical user input, try vertical move first, then horizontal move
-                if btn(UP) or btn(DOWN) then
-                    if is_line(self.x, self.y + self.dy) then
-                        self.y = self.y + self.dy
-                        self.dx = 0
-                        return
-                    elseif is_line(self.x + self.dx, self.y) then
-                        self.x = self.x + self.dx
-                        self.dy = 0
-                        return
-                    end
-                end
-            else
-                -- no new input, just try to move in the current direction
-                if is_line(self.x + self.dx, self.y + self.dy) then
-                    self.x = self.x + self.dx
-                    self.y = self.y + self.dy
+                self.dx = rdx
+                self.dy = rdy
+            end
+
+            -- no direction yet, wait for input
+            if self.dx == 0 and self.dy == 0 then
+                draw_partial_polygon(self.partial_polygon, self.x, self.y)
+                return
+            end
+
+            local nx, ny = self.x + self.dx, self.y + self.dy
+
+            -- still on the line, just slide along it
+            if not self.left_line then
+                if is_line(nx, ny) then
+                    self.x = nx
+                    self.y = ny
                     return
+                else
+                    -- actually leaving the line now, record departure point
+                    self.left_line = true
+                    table.insert(self.partial_polygon, {x=self.x, y=self.y})
                 end
+            end
+
+            -- check if we've returned to a line
+            if self.left_line and is_line(nx, ny) then
+                self.free = false
+                self.left_line = false
+                self.x = nx
+                self.y = ny
+
+                -- add the trail lines to the field
+                table.insert(self.partial_polygon, {x=self.x, y=self.y})
+                for i = 1, #self.partial_polygon - 1 do
+                    local p1 = self.partial_polygon[i]
+                    local p2 = self.partial_polygon[i + 1]
+                    table.insert(lines, {x1=p1.x, y1=p1.y, x2=p2.x, y2=p2.y})
+                end
+                split_line(self.partial_polygon[1].x, self.partial_polygon[1].y)
+                split_line(self.partial_polygon[#self.partial_polygon].x, self.partial_polygon[#self.partial_polygon].y)
+                self.partial_polygon = {}
+                self.dx = 0
+                self.dy = 0
+                return
+            end
+
+            -- move freely
+            self.x = nx
+            self.y = ny
+            draw_partial_polygon(self.partial_polygon, self.x, self.y)
+        else
+            -- line movement: stop on B
+            if btn(B) then
+                self.dx = 0
+                self.dy = 0
+                return
+            end
+
+            -- try requested direction first
+            if (rdx ~= 0 or rdy ~= 0) and is_line(self.x + rdx, self.y + rdy) then
+                self.x = self.x + rdx
+                self.y = self.y + rdy
+                self.dx = rdx
+                self.dy = rdy
+                return
+            end
+
+            -- fall back to current direction (slide along line)
+            if (self.dx ~= 0 or self.dy ~= 0) and is_line(self.x + self.dx, self.y + self.dy) then
+                self.x = self.x + self.dx
+                self.y = self.y + self.dy
+            else
+                self.dx = 0
+                self.dy = 0
             end
         end
     end
@@ -277,7 +274,7 @@ function _draw()
     cls()
 
     for _, l in ipairs(lines) do
-        stroke(1, rgba(255, 255, 255, 255))
+        stroke(1, rgba(random(0, 255), random(0, 255), random(0, 255), 255))
         line(l.x1, l.y1, l.x2, l.y2)
     end
 
@@ -285,8 +282,6 @@ function _draw()
     s:draw()
     q:move()
     q:draw()
-
-    flood_fill(q.x-1, q.y, rgba(255, 255, 255, 100))
 
     if q:is_colliding_with_player(s) then
         game_over = true
