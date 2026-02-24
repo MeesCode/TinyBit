@@ -159,20 +159,11 @@ function is_unclaimed(x, y)
     return count % 2 == 1
 end
 
--- take a partial poligon and the players position
--- draw lines between the points
-function draw_partial_polygon(partial_polygon, x, y)
+-- draw partial polygon (list of line segments)
+function draw_partial_polygon(partial_polygon)
     stroke(1, rgba(0, 255, 255, 255))
-    for i = 1, #partial_polygon do
-        local p1 = partial_polygon[i]
-        local p2 = partial_polygon[i % #partial_polygon + 1]
-        if i ~= #partial_polygon then
-            line(p1.x, p1.y, p2.x, p2.y)
-        end
-    end
-    if #partial_polygon > 0 then
-        local last_point = partial_polygon[#partial_polygon]
-        line(last_point.x, last_point.y, x, y)
+    for _, l in ipairs(partial_polygon) do
+        line(l.x1, l.y1, l.x2, l.y2)
     end
 end
 
@@ -190,16 +181,21 @@ Sparx = {
     end,
 
     move = function(self)
-        -- check for valid directions (only horizontal or vertical movement along lines)
+        -- check for valid directions (permanent lines + player trail)
+        local trail = s.partial_polygon
         local valid_directions = {}
-        if is_line(self.x + 1, self.y, lines) and not (self.dx == -1 and self.dy == 0) then table.insert(valid_directions, {dx=1, dy=0}) end
-        if is_line(self.x - 1, self.y, lines) and not (self.dx == 1 and self.dy == 0) then table.insert(valid_directions, {dx=-1, dy=0}) end
-        if is_line(self.x, self.y + 1, lines) and not (self.dx == 0 and self.dy == -1) then table.insert(valid_directions, {dx=0, dy=1}) end
-        if is_line(self.x, self.y - 1, lines) and not (self.dx == 0 and self.dy == 1) then table.insert(valid_directions, {dx=0, dy=-1}) end
+        if (is_line(self.x + 1, self.y, lines) or is_line(self.x + 1, self.y, trail)) and not (self.dx == -1 and self.dy == 0) then table.insert(valid_directions, {dx=1, dy=0}) end
+        if (is_line(self.x - 1, self.y, lines) or is_line(self.x - 1, self.y, trail)) and not (self.dx == 1 and self.dy == 0) then table.insert(valid_directions, {dx=-1, dy=0}) end
+        if (is_line(self.x, self.y + 1, lines) or is_line(self.x, self.y + 1, trail)) and not (self.dx == 0 and self.dy == -1) then table.insert(valid_directions, {dx=0, dy=1}) end
+        if (is_line(self.x, self.y - 1, lines) or is_line(self.x, self.y - 1, trail)) and not (self.dx == 0 and self.dy == 1) then table.insert(valid_directions, {dx=0, dy=-1}) end
 
         -- pick one of the valid directions at random
-        local dir = valid_directions[random(1, #valid_directions)]
-        if dir then
+        if #valid_directions == 0 then
+            -- dead end: reverse direction (allow U-turn)
+            self.dx = -self.dx
+            self.dy = -self.dy
+        else
+            local dir = valid_directions[random(1, #valid_directions)]
             self.dx = dir.dx
             self.dy = dir.dy
         end
@@ -258,15 +254,8 @@ Qix = {
     end,
 
     is_colliding_with_player = function (self, player)
-        for i = 1, #player.partial_polygon do
-            local p1 = player.partial_polygon[i]
-            local p2
-            if i == #player.partial_polygon then
-                p2 = {x=player.x, y=player.y}
-            else
-                p2 = player.partial_polygon[i+1]
-            end
-            if is_between_points(self.x, self.y, {x1=p1.x, y1=p1.y, x2=p2.x, y2=p2.y}) then
+        for _, l in ipairs(player.partial_polygon) do
+            if is_between_points(self.x, self.y, l) then
                 return true
             end
         end
@@ -278,9 +267,12 @@ Qix = {
 Stix = {
     x = 64,
     y = 118,
+    fx = 64.0,
+    fy = 118.0,
     dx = 0,
     dy = 0,
-    partial_polygon = {},
+    speed = 0.6,
+    partial_polygon = {},  -- list of {x1, y1, x2, y2} line segments
     free = false,
     left_line = false,
 
@@ -294,8 +286,17 @@ Stix = {
         line(self.x-2, self.y+2, self.x + 2, self.y - 2)
     end,
 
+    -- check if a point is on the trail (excluding the live segment being extended)
+    is_on_trail = function(self, px, py)
+        for i = 1, #self.partial_polygon - 1 do
+            if is_between_points(px, py, self.partial_polygon[i]) then
+                return true
+            end
+        end
+        return false
+    end,
+
     move = function(self)
-        -- read input into a single-axis requested direction
         local rdx, rdy = 0, 0
         if btn(UP) then rdy = -1
         elseif btn(DOWN) then rdy = 1
@@ -310,13 +311,32 @@ Stix = {
         end
 
         if self.free then
+            -- cancel free mode if haven't left the line yet
+            if not self.left_line and not btn(A) then
+                self.free = false
+                self.dx = 0
+                self.dy = 0
+                return
+            end
+
             -- apply requested direction
             if rdx ~= 0 or rdy ~= 0 then
-                -- only track turns once we've left the line
                 if self.left_line then
                     local axis_changed = (self.dx ~= 0 and rdy ~= 0) or (self.dy ~= 0 and rdx ~= 0)
                     if axis_changed then
-                        table.insert(self.partial_polygon, {x=self.x, y=self.y})
+                        -- round position at the turn point
+                        self.fx = math.floor(self.fx + 0.5)
+                        self.fy = math.floor(self.fy + 0.5)
+                        self.x = self.fx
+                        self.y = self.fy
+                        -- finalize the current trail line endpoint
+                        if #self.partial_polygon > 0 then
+                            local last = self.partial_polygon[#self.partial_polygon]
+                            last.x2 = self.x
+                            last.y2 = self.y
+                        end
+                        -- start a new trail line from the turn point
+                        table.insert(self.partial_polygon, {x1=self.x, y1=self.y, x2=self.x, y2=self.y})
                     end
                 end
                 self.dx = rdx
@@ -325,81 +345,131 @@ Stix = {
 
             -- no direction yet, wait for input
             if self.dx == 0 and self.dy == 0 then
-                draw_partial_polygon(self.partial_polygon, self.x, self.y)
+                draw_partial_polygon(self.partial_polygon)
                 return
             end
 
-            local nx, ny = self.x + self.dx, self.y + self.dy
-
-            -- still on the line, just slide along it
+            -- still on the line, slide at integer speed
             if not self.left_line then
+                local nx, ny = self.x + self.dx, self.y + self.dy
                 if is_line(nx, ny, lines) then
                     self.x = nx
                     self.y = ny
+                    self.fx = nx
+                    self.fy = ny
                     return
                 else
-                    -- only leave into unclaimed territory
                     if not is_unclaimed(nx, ny) then
                         return
                     end
-                    -- actually leaving the line now, record departure point
+                    -- leaving the line, start first trail line
                     self.left_line = true
-                    table.insert(self.partial_polygon, {x=self.x, y=self.y})
+                    table.insert(self.partial_polygon, {x1=self.x, y1=self.y, x2=self.x, y2=self.y})
                 end
             end
 
-            -- check if we've returned to a line
-            if self.left_line and is_line(nx, ny, lines) then
-                self.free = false
-                self.left_line = false
-                self.x = nx
-                self.y = ny
+            -- free movement at reduced speed
+            local nfx = self.fx + self.dx * self.speed
+            local nfy = self.fy + self.dy * self.speed
 
-                -- add the trail lines to the field
-                table.insert(self.partial_polygon, {x=self.x, y=self.y})
-                for i = 1, #self.partial_polygon - 1 do
-                    local p1 = self.partial_polygon[i]
-                    local p2 = self.partial_polygon[i + 1]
-                    table.insert(lines, {x1=p1.x, y1=p1.y, x2=p2.x, y2=p2.y})
+            -- check if we crossed an integer boundary (speed < 1 so at most one per frame)
+            local crossed = false
+            local check_x, check_y = self.x, self.y
+
+            if self.dx > 0 then
+                local cx = math.floor(nfx)
+                if cx > self.fx then crossed = true; check_x = cx end
+            elseif self.dx < 0 then
+                local cx = math.ceil(nfx)
+                if cx < self.fx then crossed = true; check_x = cx end
+            end
+            if self.dy > 0 then
+                local cy = math.floor(nfy)
+                if cy > self.fy then crossed = true; check_y = cy end
+            elseif self.dy < 0 then
+                local cy = math.ceil(nfy)
+                if cy < self.fy then crossed = true; check_y = cy end
+            end
+
+            if crossed then
+                -- self-collision (can't cross own trail)
+                if self:is_on_trail(check_x, check_y) then
+                    draw_partial_polygon(self.partial_polygon)
+                    return
                 end
-                split_line(self.partial_polygon[1].x, self.partial_polygon[1].y)
-                split_line(self.partial_polygon[#self.partial_polygon].x, self.partial_polygon[#self.partial_polygon].y)
-                self.partial_polygon = {}
-                self.dx = 0
-                self.dy = 0
-                qix_polygon = find_polygon_lines(q.x, q.y)
-                return
+
+                -- check if we've returned to a permanent line
+                if is_line(check_x, check_y, lines) then
+                    -- snap to the integer landing point
+                    self.fx = check_x
+                    self.fy = check_y
+                    self.x = check_x
+                    self.y = check_y
+                    -- finalize trail endpoint
+                    if #self.partial_polygon > 0 then
+                        local last = self.partial_polygon[#self.partial_polygon]
+                        last.x2 = self.x
+                        last.y2 = self.y
+                    end
+
+                    self.free = false
+                    self.left_line = false
+                    -- add trail lines to the field
+                    for _, tl in ipairs(self.partial_polygon) do
+                        table.insert(lines, tl)
+                    end
+                    split_line(self.partial_polygon[1].x1, self.partial_polygon[1].y1)
+                    local last_trail = self.partial_polygon[#self.partial_polygon]
+                    split_line(last_trail.x2, last_trail.y2)
+                    self.partial_polygon = {}
+                    self.dx = 0
+                    self.dy = 0
+                    qix_polygon = find_polygon_lines(q.x, q.y)
+                    return
+                end
+
+                -- can't enter claimed territory
+                if not is_unclaimed(check_x, check_y) then
+                    draw_partial_polygon(self.partial_polygon)
+                    return
+                end
             end
 
-            -- only move into unclaimed territory
-            if not is_unclaimed(nx, ny) then
-                draw_partial_polygon(self.partial_polygon, self.x, self.y)
-                return
+            -- move
+            self.fx = nfx
+            self.fy = nfy
+            self.x = math.floor(self.fx + 0.5)
+            self.y = math.floor(self.fy + 0.5)
+            -- update live trail endpoint
+            if #self.partial_polygon > 0 then
+                local last = self.partial_polygon[#self.partial_polygon]
+                last.x2 = self.x
+                last.y2 = self.y
             end
-            self.x = nx
-            self.y = ny
-            draw_partial_polygon(self.partial_polygon, self.x, self.y)
+            draw_partial_polygon(self.partial_polygon)
         else
-            -- line movement: stop on B
+            -- line movement at integer speed
             if btn(B) then
                 self.dx = 0
                 self.dy = 0
                 return
             end
 
-            -- try requested direction first
             if (rdx ~= 0 or rdy ~= 0) and is_line(self.x + rdx, self.y + rdy, lines) then
                 self.x = self.x + rdx
                 self.y = self.y + rdy
+                self.fx = self.x
+                self.fy = self.y
                 self.dx = rdx
                 self.dy = rdy
                 return
             end
 
-            -- fall back to current direction (slide along line)
             if (self.dx ~= 0 or self.dy ~= 0) and is_line(self.x + self.dx, self.y + self.dy, lines) then
                 self.x = self.x + self.dx
                 self.y = self.y + self.dy
+                self.fx = self.x
+                self.fy = self.y
             else
                 self.dx = 0
                 self.dy = 0
