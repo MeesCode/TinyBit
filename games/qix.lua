@@ -6,14 +6,25 @@ lines = {
     {x1=10, y1=118, x2=10, y2=10},
 }
 
+qix_polygon = {
+    {x1=10, y1=10, x2=118, y2=10},
+    {x1=118, y1=10, x2=118, y2=118},
+    {x1=118, y1=118, x2=10, y2=118},
+    {x1=10, y1=118, x2=10, y2=10},
+}
+
+-- check if two lines are the same line (regardless of direction)
 function is_equal_lines(line1, line2)
     return (line1.x1 == line2.x1 and line1.y1 == line2.y1 and line1.x2 == line2.x2 and line1.y2 == line2.y2) or
            (line1.x1 == line2.x2 and line1.y1 == line2.y2 and line1.x2 == line2.x1 and line1.y2 == line2.y1)
 end
 
+-- split a line into two lines at the point (x, y)
 function split_line(x, y)
     for i, line in ipairs(lines) do
-        if is_between_points(x, y, line) then
+        -- if the point is on the line, split it into two lines with the point as the shared endpoint
+        -- but only if the point is not already an endpoint of the line, otherwise we would end up with duplicate lines
+        if is_between_points(x, y, line) and not ((x == line.x1 and y == line.y1) or (x == line.x2 and y == line.y2)) then
             table.remove(lines, i)
             table.insert(lines, {x1=line.x1, y1=line.y1, x2=x, y2=y})
             table.insert(lines, {x1=x, y1=y, x2=line.x2, y2=line.y2})
@@ -29,15 +40,96 @@ function is_between_points(x, y, line)
            (y == line.y1 and y == line.y2 and ((x >= line.x1 and x <= line.x2) or (x >= line.x2 and x <= line.x1)))
 end
 
--- find polygon lines that have a start point or end point that is between the start and end point of the line formed by (x1, y1) and (x2, y2)
-function find_intersecting_lines(x, y)
-    local intersecting_lines = {}
-    for _, line in ipairs(lines) do
-        if is_between_points(x, y, line) then
-            table.insert(intersecting_lines, line)
+-- right-hand turn priority for clockwise traversal
+-- in screen coords (y down), CW rotation: (x,y) -> (-y, x)
+function turn_priority(hx, hy, dx, dy)
+    if dx == -hy and dy == hx then return 1 end -- right turn
+    if dx == hx and dy == hy then return 2 end  -- straight
+    if dx == hy and dy == -hx then return 3 end -- left turn
+    return 4                                     -- u-turn
+end
+
+-- from a point (x, y) find the polygon that contains it using CW wall following
+-- cast a ray right to find the nearest vertical wall, then follow edges using the right-hand rule
+function find_polygon_lines(x, y)
+    local polygon_lines = {}
+
+    -- cast ray right: find the nearest vertical line segment that the ray crosses
+    local hit_line = nil
+    local hit_x = nil
+    for _, l in ipairs(lines) do
+        if l.x1 == l.x2 and l.x1 > x then
+            local min_y = l.y1 < l.y2 and l.y1 or l.y2
+            local max_y = l.y1 > l.y2 and l.y1 or l.y2
+            if y >= min_y and y <= max_y then
+                if hit_x == nil or l.x1 < hit_x then
+                    hit_x = l.x1
+                    hit_line = l
+                end
+            end
         end
     end
-    return intersecting_lines
+
+    if not hit_line then return polygon_lines end
+
+    -- start CW traversal: go downward along the hit line
+    -- the closing vertex is the upward endpoint (where the cycle will complete)
+    local vx, vy, close_vx, close_vy
+    if hit_line.y1 >= hit_line.y2 then
+        vx, vy = hit_line.x1, hit_line.y1
+        close_vx, close_vy = hit_line.x2, hit_line.y2
+    else
+        vx, vy = hit_line.x2, hit_line.y2
+        close_vx, close_vy = hit_line.x1, hit_line.y1
+    end
+
+    table.insert(polygon_lines, hit_line)
+    local hx, hy = 0, 1 -- heading DOWN
+    local prev_line = hit_line
+
+    for _ = 1, 1000 do
+        if vx == close_vx and vy == close_vy then
+            break
+        end
+
+        local best_line = nil
+        local best_priority = 5
+        local best_ox, best_oy = nil, nil
+        local best_dx, best_dy = nil, nil
+
+        for _, l in ipairs(lines) do
+            if not is_equal_lines(l, prev_line) then
+                local ox, oy = nil, nil
+                if l.x1 == vx and l.y1 == vy then
+                    ox, oy = l.x2, l.y2
+                elseif l.x2 == vx and l.y2 == vy then
+                    ox, oy = l.x1, l.y1
+                end
+                if ox then
+                    local dx = ox - vx
+                    local dy = oy - vy
+                    if dx ~= 0 then dx = dx / math.abs(dx) end
+                    if dy ~= 0 then dy = dy / math.abs(dy) end
+                    local p = turn_priority(hx, hy, dx, dy)
+                    if p < best_priority then
+                        best_priority = p
+                        best_line = l
+                        best_ox, best_oy = ox, oy
+                        best_dx, best_dy = dx, dy
+                    end
+                end
+            end
+        end
+
+        if not best_line then break end
+
+        table.insert(polygon_lines, best_line)
+        vx, vy = best_ox, best_oy
+        hx, hy = best_dx, best_dy
+        prev_line = best_line
+    end
+
+    return polygon_lines
 end
 
 -- check if a point is on a line
@@ -54,11 +146,14 @@ end
 -- since there are only horizontal and vertical lines, we only have if check vertical line
 -- ignore the border line
 function is_claimed(x, y)
-    local intersecting_lines = find_intersecting_lines(x, y)
     local count = 0
-    for _, line in ipairs(intersecting_lines) do
+    for _, line in ipairs(qix_polygon) do
         if line.x1 == line.x2 and line.x1 > x then
-            count = count + 1
+            local min_y = line.y1 < line.y2 and line.y1 or line.y2
+            local max_y = line.y1 > line.y2 and line.y1 or line.y2
+            if y >= min_y and y < max_y then
+                count = count + 1
+            end
         end
     end
     return count % 2 == 1
@@ -228,6 +323,7 @@ Stix = {
                 self.partial_polygon = {}
                 self.dx = 0
                 self.dy = 0
+                qix_polygon = find_polygon_lines(q.x, q.y)
                 return
             end
 
@@ -273,15 +369,31 @@ function _draw()
 
     cls()
 
+    stroke(1, rgba(255, 255, 255, 255))
     for _, l in ipairs(lines) do
-        stroke(1, rgba(random(0, 255), random(0, 255), random(0, 255), 255))
         line(l.x1, l.y1, l.x2, l.y2)
+    end
+
+    for y = 10, 118 do
+        for x = 10, 118 do
+            if is_claimed(x, y) then
+                pset(x, y, rgba(0, 255, 255, 50))
+            end
+        end
     end
 
     s:move()
     s:draw()
     q:move()
     q:draw()
+
+    -- qix_polygon = find_polygon_lines(q.x, q.y)
+    -- log("polygon lines: " .. #qix_polygon)
+
+    stroke(1, rgba(255, 0, 0, 255))
+    for _, l in ipairs(qix_polygon) do
+        line(l.x1, l.y1, l.x2, l.y2)
+    end
 
     if q:is_colliding_with_player(s) then
         game_over = true
