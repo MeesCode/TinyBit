@@ -145,7 +145,7 @@ end
 -- raycasting algorithm to check if a point is inside a polygon
 -- since there are only horizontal and vertical lines, we only have if check vertical line
 -- ignore the border line
-function is_claimed(x, y)
+function is_unclaimed(x, y)
     local count = 0
     for _, line in ipairs(qix_polygon) do
         if line.x1 == line.x2 and line.x1 > x then
@@ -298,6 +298,10 @@ Stix = {
                     self.y = ny
                     return
                 else
+                    -- only leave into unclaimed territory
+                    if not is_unclaimed(nx, ny) then
+                        return
+                    end
                     -- actually leaving the line now, record departure point
                     self.left_line = true
                     table.insert(self.partial_polygon, {x=self.x, y=self.y})
@@ -327,7 +331,11 @@ Stix = {
                 return
             end
 
-            -- move freely
+            -- only move into unclaimed territory
+            if not is_unclaimed(nx, ny) then
+                draw_partial_polygon(self.partial_polygon, self.x, self.y)
+                return
+            end
             self.x = nx
             self.y = ny
             draw_partial_polygon(self.partial_polygon, self.x, self.y)
@@ -365,6 +373,34 @@ q = Qix
 
 game_over = false
 
+function fill_polygon(polygon, color)
+    local min_y, max_y = 999, -999
+    for _, l in ipairs(polygon) do
+        if l.y1 < min_y then min_y = l.y1 end
+        if l.y2 < min_y then min_y = l.y2 end
+        if l.y1 > max_y then max_y = l.y1 end
+        if l.y2 > max_y then max_y = l.y2 end
+    end
+
+    stroke(1, color)
+    for y = min_y, max_y - 1 do
+        local crossings = {}
+        for _, l in ipairs(polygon) do
+            if l.x1 == l.x2 then -- only vertical edges create crossings
+                local ey_min = l.y1 < l.y2 and l.y1 or l.y2
+                local ey_max = l.y1 > l.y2 and l.y1 or l.y2
+                if y >= ey_min and y < ey_max then
+                    table.insert(crossings, l.x1)
+                end
+            end
+        end
+        table.sort(crossings)
+        for i = 1, #crossings - 1, 2 do
+            line(crossings[i], y, crossings[i+1] - 1, y)
+        end
+    end
+end
+
 function _draw() 
 
     cls()
@@ -374,21 +410,12 @@ function _draw()
         line(l.x1, l.y1, l.x2, l.y2)
     end
 
-    for y = 10, 118 do
-        for x = 10, 118 do
-            if is_claimed(x, y) then
-                pset(x, y, rgba(0, 255, 255, 50))
-            end
-        end
-    end
+    fill_polygon(qix_polygon, rgba(255, 0, 0, 100))
 
     s:move()
     s:draw()
     q:move()
     q:draw()
-
-    -- qix_polygon = find_polygon_lines(q.x, q.y)
-    -- log("polygon lines: " .. #qix_polygon)
 
     stroke(1, rgba(255, 0, 0, 255))
     for _, l in ipairs(qix_polygon) do
