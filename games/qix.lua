@@ -133,8 +133,8 @@ function find_polygon_lines(x, y)
 end
 
 -- check if a point is on a line
-function is_line(x2, y2)
-    for _, line in ipairs(lines) do
+function is_line(x2, y2, l)
+    for _, line in ipairs(l) do
         if is_between_points(x2, y2, line) then
             return true
         end
@@ -177,6 +177,46 @@ function draw_partial_polygon(partial_polygon, x, y)
 end
 
 -- the enemy
+Sparx = {
+    x = 64,
+    y = 10,
+    dx = 0,
+    dy = 0,
+
+    draw = function(self)
+        stroke(1, rgba(255, 255, 0, 255))
+        line(self.x-2, self.y-2, self.x + 2, self.y + 2)
+        line(self.x-2, self.y+2, self.x + 2, self.y - 2)
+    end,
+
+    move = function(self)
+        -- check for valid directions (only horizontal or vertical movement along lines)
+        local valid_directions = {}
+        if is_line(self.x + 1, self.y, lines) and not (self.dx == -1 and self.dy == 0) then table.insert(valid_directions, {dx=1, dy=0}) end
+        if is_line(self.x - 1, self.y, lines) and not (self.dx == 1 and self.dy == 0) then table.insert(valid_directions, {dx=-1, dy=0}) end
+        if is_line(self.x, self.y + 1, lines) and not (self.dx == 0 and self.dy == -1) then table.insert(valid_directions, {dx=0, dy=1}) end
+        if is_line(self.x, self.y - 1, lines) and not (self.dx == 0 and self.dy == 1) then table.insert(valid_directions, {dx=0, dy=-1}) end
+
+        -- pick one of the valid directions at random
+        local dir = valid_directions[random(1, #valid_directions)]
+        if dir then
+            self.dx = dir.dx
+            self.dy = dir.dy
+        end
+
+        self.x = self.x + self.dx
+        self.y = self.y + self.dy
+    end,
+
+    is_colliding_with_player = function (self, player)
+        if (player.x == self.x and player.y == self.y) or (player.x == self.x - self.dx and player.y == self.y - self.dy) then
+            return true
+        end
+        return false
+    end
+}
+
+-- the enemy
 Qix = {
     x = 64,
     y = 64,
@@ -210,7 +250,7 @@ Qix = {
             end
         end
 
-        if not is_line(self.x + self.dx, self.y + self.dy) then
+        if not is_line(self.x + self.dx, self.y + self.dy, lines) then
             self.x = self.x + self.dx
             self.y = self.y + self.dy
         end
@@ -293,7 +333,7 @@ Stix = {
 
             -- still on the line, just slide along it
             if not self.left_line then
-                if is_line(nx, ny) then
+                if is_line(nx, ny, lines) then
                     self.x = nx
                     self.y = ny
                     return
@@ -309,7 +349,7 @@ Stix = {
             end
 
             -- check if we've returned to a line
-            if self.left_line and is_line(nx, ny) then
+            if self.left_line and is_line(nx, ny, lines) then
                 self.free = false
                 self.left_line = false
                 self.x = nx
@@ -348,7 +388,7 @@ Stix = {
             end
 
             -- try requested direction first
-            if (rdx ~= 0 or rdy ~= 0) and is_line(self.x + rdx, self.y + rdy) then
+            if (rdx ~= 0 or rdy ~= 0) and is_line(self.x + rdx, self.y + rdy, lines) then
                 self.x = self.x + rdx
                 self.y = self.y + rdy
                 self.dx = rdx
@@ -357,7 +397,7 @@ Stix = {
             end
 
             -- fall back to current direction (slide along line)
-            if (self.dx ~= 0 or self.dy ~= 0) and is_line(self.x + self.dx, self.y + self.dy) then
+            if (self.dx ~= 0 or self.dy ~= 0) and is_line(self.x + self.dx, self.y + self.dy, lines) then
                 self.x = self.x + self.dx
                 self.y = self.y + self.dy
             else
@@ -367,11 +407,6 @@ Stix = {
         end
     end
 }
-
-s = Stix
-q = Qix
-
-game_over = false
 
 function fill_polygon(polygon, color)
     local min_y, max_y = 999, -999
@@ -401,6 +436,12 @@ function fill_polygon(polygon, color)
     end
 end
 
+s = Stix
+q = Qix
+sp = Sparx
+
+game_over = false
+
 function _draw() 
 
     cls()
@@ -416,6 +457,8 @@ function _draw()
     s:draw()
     q:move()
     q:draw()
+    sp:move()
+    sp:draw()
 
     stroke(1, rgba(255, 0, 0, 255))
     for _, l in ipairs(qix_polygon) do
