@@ -13,6 +13,27 @@ qix_polygon = {
     {x1=10, y1=118, x2=10, y2=10},
 }
 
+tune = [[
+X:1
+T:by Fabian Fabro (FirahFabe)
+L:1/4
+Q:1/4=130
+M:4/4
+K:C
+V:1
+.B,/.B,/ B,/4A,/4 z/4 B,/4 z/4 D/4 z/4 B,/4 z/4 ^F,/4A,/ | .B,/.B,/ B,/4A,/4 z/4 B,/4 z/4 F/4 z/4 E/4 z/4 D/4A,/ |
+.B,/.B,/ B,/4A,/4 z/4 B,/4 z/4 D/4 z/4 B,/4 z/4 ^F,/4A,/ | .B,/.B,/ .B,/A,/4B,/4 z2 ||  ^f3/2 =f/- f z/ d/4e/4 | =f/>e/- e/d/ ^c/>d/- d/e/ | ^f3/2 b/- b B/^c/ |
+d/>e/- e/d/ ^c/>a/- a/g/ |  [Bd^f]3/2 [Bd=f]/- [Bdf] z/ d/4e/4 | [G^c=f]/>e/- e/d/ [^Ac]/>d/- d/e/ | [B^f]3/2 [=fb]/- [fb] b/^c'/ |[bd']/>e'/- e'/g/ ^f/>d'/- d'/e'/ |
+[Bd^f]3/2 [Bd=f]/- [Bdf] z/ d/4e/4 | [GB=f]/>e/- e/d/ [G^c]/>d/- d/e/ | [Bd^f]3/2 [^c=fb]/- [cfb] B/c/ | d/>e/- e/d/ ^c/>a/- a/g/ |  [Bd^f]3/2 [Bd=f]/- [Bdf] z/ d/4e/4 |
+[d^f]3/2 [=fb]/- [fb] B/^c/ | d/>g/- g/^f/ =f/>d'/- d'/^a/ |]
+V:2
+.B,,/.B,,/ B,,/4A,,/4 z/4 B,,/4 z/4 D,/4 z/4 B,,/4 z/4 ^F,,/4A,,/ | .B,,/.B,,/ B,,/4A,,/4 z/4 B,,/4 z/4 F,/4 z/4 E,/4 z/4 D,/4A,,/ |
+.B,,/.B,,/ B,,/4A,,/4 z/4 B,,/4 z/4 D,/4 z/4 B,,/4 z/4 ^F,,/4A,,/ | .B,,/.B,,/ .B,,/A,,/4B,,/4 z2 ||  [B,,^F,B,]3/2 [^G,,D,=F,]/- [G,,D,F,] z | [B,,B,]2 [^F,,^F,]2 | [B,,^F,B,]3/2 [^G,,D,=F,]/- [G,,D,F,] z |
+[^C,^C]2 [^F,,^F,]2 |  [B,,^F,B,]3/2 [^G,,D,=F,]/- [G,,D,F,] z | [B,,B,]2 [^F,,^F,]2 | [B,,^F,B,]3/2 [^G,,D,=F,]/- [G,,D,F,] z | [^C,^C]2 [^F,,^F,]2 |
+[B,,^F,B,]3/2 [^G,,D,=F,]/- [G,,D,F,] z | [B,,B,]2 [^F,,^F,]2 | [B,,^F,B,]3/2 [^G,,D,=F,]/- [G,,D,F,] z | [^C,^C]2 [^F,,^F,]2 |  [B,,^F,B,]3/2 [^G,,D,=F,]/- [G,,D,F,] z |
+[B,,^F,B,]3/2 [^G,,D,=F,]/- [G,,D,F,] z | [^C,^C]2 [^F,,^F,]2 |]
+]]
+
 -- check if two lines are the same line (regardless of direction)
 function is_equal_lines(line1, line2)
     return (line1.x1 == line2.x1 and line1.y1 == line2.y1 and line1.x2 == line2.x2 and line1.y2 == line2.y2) or
@@ -539,6 +560,7 @@ function reset()
     sp.x, sp.y, sp.dx, sp.dy = 64, 10, 0, 0
 end
 
+music(tune)
 function _draw() 
 
     cls()
