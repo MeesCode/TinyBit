@@ -164,7 +164,7 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
     uint8_t* spritebuffer = (uint8_t*)malloc(TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4);
     uint8_t* coverbuffer = (uint8_t*)malloc(TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4);
 
-    SDL_Surface* cartridge = load_image("assets/cartridge2.png");
+    SDL_Surface* cartridge = load_image("assets/cartridge3.png");
     surface_to_buffer(cartridge, buffer);
 
     SDL_Surface* spritesheet = load_image(sprite);

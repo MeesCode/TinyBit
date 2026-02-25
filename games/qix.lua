@@ -167,6 +167,43 @@ function draw_partial_polygon(partial_polygon)
     end
 end
 
+fill_crossings = {}
+
+function fill_polygon(polygon, color)
+    local pixels = 0
+    local min_y, max_y = 999, -999
+    for _, l in ipairs(polygon) do
+        if l.y1 < min_y then min_y = l.y1 end
+        if l.y2 < min_y then min_y = l.y2 end
+        if l.y1 > max_y then max_y = l.y1 end
+        if l.y2 > max_y then max_y = l.y2 end
+    end
+
+    local crossings = fill_crossings
+    stroke(1, color)
+    for y = min_y, max_y - 1 do
+        local n = 0
+        for _, l in ipairs(polygon) do
+            if l.x1 == l.x2 then -- only vertical edges create crossings
+                local ey_min = l.y1 < l.y2 and l.y1 or l.y2
+                local ey_max = l.y1 > l.y2 and l.y1 or l.y2
+                if y >= ey_min and y < ey_max then
+                    n = n + 1
+                    crossings[n] = l.x1
+                end
+            end
+        end
+        -- clear stale entries from previous iteration
+        for i = n + 1, #crossings do crossings[i] = nil end
+        table.sort(crossings)
+        for i = 1, n - 1, 2 do
+            pixels = pixels + crossings[i+1] - crossings[i]
+            line(crossings[i], y, crossings[i+1] - 1, y)
+        end
+    end
+    return pixels
+end
+
 -- the enemy
 Sparx = {
     x = 64,
@@ -478,45 +515,29 @@ Stix = {
     end
 }
 
-fill_crossings = {}
-
-function fill_polygon(polygon, color)
-    local min_y, max_y = 999, -999
-    for _, l in ipairs(polygon) do
-        if l.y1 < min_y then min_y = l.y1 end
-        if l.y2 < min_y then min_y = l.y2 end
-        if l.y1 > max_y then max_y = l.y1 end
-        if l.y2 > max_y then max_y = l.y2 end
-    end
-
-    local crossings = fill_crossings
-    stroke(1, color)
-    for y = min_y, max_y - 1 do
-        local n = 0
-        for _, l in ipairs(polygon) do
-            if l.x1 == l.x2 then -- only vertical edges create crossings
-                local ey_min = l.y1 < l.y2 and l.y1 or l.y2
-                local ey_max = l.y1 > l.y2 and l.y1 or l.y2
-                if y >= ey_min and y < ey_max then
-                    n = n + 1
-                    crossings[n] = l.x1
-                end
-            end
-        end
-        -- clear stale entries from previous iteration
-        for i = n + 1, #crossings do crossings[i] = nil end
-        table.sort(crossings)
-        for i = 1, n - 1, 2 do
-            line(crossings[i], y, crossings[i+1] - 1, y)
-        end
-    end
-end
-
 s = Stix
 q = Qix
 sp = Sparx
 
-game_over = false
+function reset()
+    lines = {
+        {x1=10, y1=10, x2=118, y2=10},
+        {x1=118, y1=10, x2=118, y2=118},
+        {x1=118, y1=118, x2=10, y2=118},
+        {x1=10, y1=118, x2=10, y2=10},
+    }
+
+    qix_polygon = {
+        {x1=10, y1=10, x2=118, y2=10},
+        {x1=118, y1=10, x2=118, y2=118},
+        {x1=118, y1=118, x2=10, y2=118},
+        {x1=10, y1=118, x2=10, y2=10},
+    }
+    
+    s.x, s.y, s.fx, s.fy, s.dx, s.dy, s.partial_polygon, s.free, s.left_line = 64, 118, 64.0, 118.0, 0, 0, {}, false, false
+    q.x, q.y, q.dx, q.dy = 64, 64, 0, 0
+    sp.x, sp.y, sp.dx, sp.dy = 64, 10, 0, 0
+end
 
 function _draw() 
 
@@ -524,12 +545,46 @@ function _draw()
 
     stroke(1, rgba(255, 255, 255, 255))
     fill(rgba(255, 0, 0, 200))
-    rect(10, 10, 109, 109)
-    fill_polygon(qix_polygon, rgba(0, 0, 0, 255))
+    sprite(10, 10, 109, 109, 10, 10, 109, 109)
+    local claimed = fill_polygon(qix_polygon, rgba(0, 0, 0, 255))
+
+    cursor(10, 120)
+    fill(rgba(0, 0, 0, 255))
+    text(rgb(255, 255, 255))
+    local score = 100 - math.floor(claimed * 100 / (108*108))
+    print("Claimed: " .. score .. "%")
 
     stroke(1, rgba(255, 255, 255, 255))
     for _, l in ipairs(lines) do
         line(l.x1, l.y1, l.x2, l.y2)
+    end
+
+    if q:is_colliding_with_player(s) or sp:is_colliding_with_player(s) then
+        fill(0, rgba(0, 0, 0, 200))
+        stroke(1, rgba(255, 255, 255, 255))
+        rect(20, 55, 88, 18)
+        cursor(25, 60)
+        print([[
+Game over!
+Press B to restart.]])
+        if btn(B) then
+            reset()
+        end
+        return
+    end
+
+    if score >= 90 then
+        fill(0, rgba(0, 0, 0, 200))
+        stroke(1, rgba(255, 255, 255, 255))
+        rect(20, 55, 88, 18)
+        cursor(25, 60)
+        print([[
+You win! 
+Press B to restart.]])
+        if btn(B) then
+            reset()
+        end
+        return
     end
 
     s:move()
@@ -539,15 +594,4 @@ function _draw()
     sp:move()
     sp:draw()
 
-    if q:is_colliding_with_player(s) or sp:is_colliding_with_player(s) then
-        game_over = true
-        log("Game Over")
-    end
-
-    if game_over then
-        cursor(0, 0)
-        fill(rgba(0, 0, 0, 255))
-        text(rgb(255, 255, 255))
-        print("Game Over")
-    end
 end
