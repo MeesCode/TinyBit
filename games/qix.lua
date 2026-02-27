@@ -239,23 +239,39 @@ Sparx = {
     end,
 
     move = function(self)
-        -- check for valid directions (permanent lines + player trail)
         local trail = s.partial_polygon
-        local valid_directions = {}
-        if (is_line(self.x + 1, self.y, lines) or is_line(self.x + 1, self.y, trail)) and not (self.dx == -1 and self.dy == 0) then table.insert(valid_directions, {dx=1, dy=0}) end
-        if (is_line(self.x - 1, self.y, lines) or is_line(self.x - 1, self.y, trail)) and not (self.dx == 1 and self.dy == 0) then table.insert(valid_directions, {dx=-1, dy=0}) end
-        if (is_line(self.x, self.y + 1, lines) or is_line(self.x, self.y + 1, trail)) and not (self.dx == 0 and self.dy == -1) then table.insert(valid_directions, {dx=0, dy=1}) end
-        if (is_line(self.x, self.y - 1, lines) or is_line(self.x, self.y - 1, trail)) and not (self.dx == 0 and self.dy == 1) then table.insert(valid_directions, {dx=0, dy=-1}) end
+        local dirs = {{1,0},{-1,0},{0,1},{0,-1}}
+        local n = 0
 
-        -- pick one of the valid directions at random
-        if #valid_directions == 0 then
-            -- dead end: reverse direction (allow U-turn)
+        -- prefer qix_polygon + trail
+        for _, d in ipairs(dirs) do
+            if not (self.dx == -d[1] and self.dy == -d[2]) then
+                if is_line(self.x + d[1], self.y + d[2], qix_polygon) or is_line(self.x + d[1], self.y + d[2], trail) then
+                    n = n + 1
+                    dirs[n] = d
+                end
+            end
+        end
+
+        -- fall back to all lines if no qix_polygon direction available
+        if n == 0 then
+            for _, d in ipairs({{1,0},{-1,0},{0,1},{0,-1}}) do
+                if not (self.dx == -d[1] and self.dy == -d[2]) then
+                    if is_line(self.x + d[1], self.y + d[2], lines) then
+                        n = n + 1
+                        dirs[n] = d
+                    end
+                end
+            end
+        end
+
+        if n == 0 then
             self.dx = -self.dx
             self.dy = -self.dy
         else
-            local dir = valid_directions[random(1, #valid_directions)]
-            self.dx = dir.dx
-            self.dy = dir.dy
+            local d = dirs[random(1, n)]
+            self.dx = d[1]
+            self.dy = d[2]
         end
 
         self.x = self.x + self.dx
@@ -410,7 +426,7 @@ Stix = {
             -- still on the line, slide at integer speed
             if not self.left_line then
                 local nx, ny = self.x + self.dx, self.y + self.dy
-                if is_line(nx, ny, lines) then
+                if is_line(nx, ny, qix_polygon) then
                     self.x = nx
                     self.y = ny
                     self.fx = nx
@@ -456,8 +472,8 @@ Stix = {
                     return
                 end
 
-                -- check if we've returned to a permanent line
-                if is_line(check_x, check_y, lines) then
+                -- check if we've returned to the qix polygon boundary
+                if is_line(check_x, check_y, qix_polygon) then
                     -- snap to the integer landing point
                     self.fx = check_x
                     self.fy = check_y
@@ -513,7 +529,7 @@ Stix = {
                 return
             end
 
-            if (rdx ~= 0 or rdy ~= 0) and is_line(self.x + rdx, self.y + rdy, lines) then
+            if (rdx ~= 0 or rdy ~= 0) and is_line(self.x + rdx, self.y + rdy, qix_polygon) then
                 self.x = self.x + rdx
                 self.y = self.y + rdy
                 self.fx = self.x
@@ -523,7 +539,7 @@ Stix = {
                 return
             end
 
-            if (self.dx ~= 0 or self.dy ~= 0) and is_line(self.x + self.dx, self.y + self.dy, lines) then
+            if (self.dx ~= 0 or self.dy ~= 0) and is_line(self.x + self.dx, self.y + self.dy, qix_polygon) then
                 self.x = self.x + self.dx
                 self.y = self.y + self.dy
                 self.fx = self.x
