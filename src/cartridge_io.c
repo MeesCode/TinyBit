@@ -127,15 +127,16 @@ static void encode_spritesheet(uint8_t* dest, const uint8_t* src, long size, lon
     }
 }
 
-static void encode_source(uint8_t* dest, const char* src, long size, long* dest_index) {
-    for (long i = 0; i <= size; i++) {
+// Encode a byte stream with 2 bits per PNG byte (4 PNG bytes per source byte)
+static void encode_bytes(uint8_t* dest, const uint8_t* src, long size, long* dest_index) {
+    for (long i = 0; i < size; i++) {
         uint8_t byte = src[i];
         uint8_t a = (byte >> 6) & 0x3;
         uint8_t b = (byte >> 4) & 0x3;
         uint8_t c = (byte >> 2) & 0x3;
         uint8_t d = (byte >> 0) & 0x3;
 
-        dest[*dest_index] = (dest[*dest_index] & 0xfc) | a;
+        dest[*dest_index]     = (dest[*dest_index]     & 0xfc) | a;
         dest[*dest_index + 1] = (dest[*dest_index + 1] & 0xfc) | b;
         dest[*dest_index + 2] = (dest[*dest_index + 2] & 0xfc) | c;
         dest[*dest_index + 3] = (dest[*dest_index + 3] & 0xfc) | d;
@@ -144,14 +145,62 @@ static void encode_source(uint8_t* dest, const char* src, long size, long* dest_
     }
 }
 
-void export_cartridge(char* sprite, char* script, char* cover, char* path) {
+static void write_u16_le(uint8_t* p, uint16_t v) {
+    p[0] = v & 0xff;
+    p[1] = (v >> 8) & 0xff;
+}
+
+static void write_u32_le(uint8_t* p, uint32_t v) {
+    p[0] = v & 0xff;
+    p[1] = (v >> 8) & 0xff;
+    p[2] = (v >> 16) & 0xff;
+    p[3] = (v >> 24) & 0xff;
+}
+
+// CRC-32 (IEEE 802.3, reflected polynomial 0xEDB88320)
+static uint32_t crc32(const uint8_t* data, size_t size) {
+    uint32_t crc = 0xFFFFFFFFu;
+    for (size_t i = 0; i < size; i++) {
+        crc ^= data[i];
+        for (int b = 0; b < 8; b++) {
+            uint32_t mask = -(crc & 1u);
+            crc = (crc >> 1) ^ (0xEDB88320u & mask);
+        }
+    }
+    return crc ^ 0xFFFFFFFFu;
+}
+
+static void pack_header(uint8_t header[TB_HEADER_SIZE], const char* source,
+                        uint32_t script_size, const struct CartridgeHeaderOpts* opts) {
+    memset(header, 0, TB_HEADER_SIZE);
+
+    write_u16_le(&header[0], opts->format_version);
+    write_u16_le(&header[2], opts->flags);
+    write_u32_le(&header[4], script_size);
+
+    uint32_t checksum = crc32((const uint8_t*)source, script_size);
+    write_u32_le(&header[8], checksum);
+
+    if (opts->title) {
+        strncpy((char*)&header[12], opts->title, TB_HEADER_TITLE_SIZE - 1);
+    }
+    if (opts->author) {
+        strncpy((char*)&header[76], opts->author, TB_HEADER_AUTHOR_SIZE - 1);
+    }
+
+    write_u16_le(&header[140], opts->game_version);
+    write_u32_le(&header[142], opts->package_date);
+}
+
+void export_cartridge(const char* sprite, const char* script, const char* cover,
+                      const char* path, const struct CartridgeHeaderOpts* opts) {
     char* source = read_file_to_string(script);
 
     int script_size = strlen(source);
-    int cartridge_size = TB_MEM_SCRIPT_SIZE;
+    int cartridge_size = TB_MEM_CARTRIDGE_SCRIPT_SIZE;
 
     if (script_size > cartridge_size) {
-        printf("catridge too small to fit game\n");
+        printf("cartridge too small to fit game (script %d > max %d)\n", script_size, cartridge_size);
         free(source);
         exit(EXIT_FAILURE);
     }
@@ -185,9 +234,13 @@ void export_cartridge(char* sprite, char* script, char* cover, char* path) {
         }
     }
 
+    uint8_t header[TB_HEADER_SIZE];
+    pack_header(header, source, (uint32_t)script_size, opts);
+
     long dest_index = 0;
+    encode_bytes(buffer, header, TB_HEADER_SIZE, &dest_index);
     encode_spritesheet(buffer, spritebuffer, TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4, &dest_index);
-    encode_source(buffer, source, strlen(source), &dest_index);
+    encode_bytes(buffer, (const uint8_t*)source, script_size + 1, &dest_index);
 
     SDL_Surface* surface = SDL_CreateRGBSurface(0, TB_CARTRIDGE_WIDTH, TB_CARTRIDGE_HEIGHT, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
     SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
