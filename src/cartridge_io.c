@@ -197,7 +197,7 @@ void export_cartridge(const char* sprite, const char* script, const char* cover,
     char* source = read_file_to_string(script);
 
     int script_size = strlen(source);
-    int cartridge_size = TB_MEM_CARTRIDGE_SCRIPT_SIZE;
+    int cartridge_size = TB_MEM_SCRIPT_SIZE - 1; // reserve 1 byte for the trailing NUL written below
 
     if (script_size > cartridge_size) {
         printf("cartridge too small to fit game (script %d > max %d)\n", script_size, cartridge_size);
